@@ -8,9 +8,9 @@ import (
 // DPoPTransport is an http.RoundTripper that attaches DPoP authentication headers
 // to every outgoing request.
 type DPoPTransport struct {
-	Base        http.RoundTripper
-	AccessToken string
-	ProofGen    *DPoPProofGenerator
+	Base          http.RoundTripper
+	TokenProvider TokenProvider
+	ProofGen      *DPoPProofGenerator
 }
 
 // RoundTrip implements http.RoundTripper. It generates a DPoP proof for the request
@@ -21,9 +21,14 @@ func (t *DPoPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		return nil, fmt.Errorf("failed to generate DPoP proof: %w", err)
 	}
 
+	token, err := t.TokenProvider.Token(req.Context())
+	if err != nil {
+		return nil, fmt.Errorf("obtaining access token: %w", err)
+	}
+
 	// Clone the request to avoid modifying the original.
 	clone := req.Clone(req.Context())
-	clone.Header.Set("Authorization", "DPoP "+t.AccessToken)
+	clone.Header.Set("Authorization", "DPoP "+token)
 	clone.Header.Set("DPoP", proof)
 
 	base := t.Base

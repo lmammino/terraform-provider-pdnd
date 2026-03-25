@@ -26,7 +26,7 @@ func TestDPoPTransport_HeaderAttached(t *testing.T) {
 
 	transport := &client.DPoPTransport{
 		Base:        http.DefaultTransport,
-		AccessToken: "test-token",
+		TokenProvider: client.NewStaticTokenProvider("test-token"),
 		ProofGen:    gen,
 	}
 
@@ -57,7 +57,7 @@ func TestDPoPTransport_AuthorizationHeaderFormat(t *testing.T) {
 
 	transport := &client.DPoPTransport{
 		Base:        http.DefaultTransport,
-		AccessToken: "test-token",
+		TokenProvider: client.NewStaticTokenProvider("test-token"),
 		ProofGen:    gen,
 	}
 
@@ -89,7 +89,7 @@ func TestDPoPTransport_ProofMethodMatchesRequest(t *testing.T) {
 
 	transport := &client.DPoPTransport{
 		Base:        http.DefaultTransport,
-		AccessToken: "test-token",
+		TokenProvider: client.NewStaticTokenProvider("test-token"),
 		ProofGen:    gen,
 	}
 	httpClient := &http.Client{Transport: transport}
@@ -136,7 +136,7 @@ func TestDPoPTransport_ProofURLMatchesRequest(t *testing.T) {
 
 	transport := &client.DPoPTransport{
 		Base:        http.DefaultTransport,
-		AccessToken: "test-token",
+		TokenProvider: client.NewStaticTokenProvider("test-token"),
 		ProofGen:    gen,
 	}
 	httpClient := &http.Client{Transport: transport}
@@ -183,7 +183,7 @@ func TestDPoPTransport_EmptyToken(t *testing.T) {
 
 	transport := &client.DPoPTransport{
 		Base:        http.DefaultTransport,
-		AccessToken: "",
+		TokenProvider: client.NewStaticTokenProvider(""),
 		ProofGen:    gen,
 	}
 

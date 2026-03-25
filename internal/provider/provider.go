@@ -45,9 +45,21 @@ func (p *pdndProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp 
 				Required:    true,
 			},
 			"access_token": schema.StringAttribute{
-				Description: "Access token for PDND API authentication",
-				Required:    true,
+				Description: "Access token for PDND API authentication (manual mode). Mutually exclusive with client_id/purpose_id.",
+				Optional:    true,
 				Sensitive:   true,
+			},
+			"client_id": schema.StringAttribute{
+				Description: "PDND client UUID for automatic token generation. Must be used together with purpose_id.",
+				Optional:    true,
+			},
+			"purpose_id": schema.StringAttribute{
+				Description: "PDND purpose UUID for automatic token generation. Must be used together with client_id.",
+				Optional:    true,
+			},
+			"token_endpoint": schema.StringAttribute{
+				Description: "PDND authorization server token endpoint (default: https://auth.interop.pagopa.it/token.oauth2)",
+				Optional:    true,
 			},
 			"dpop_private_key": schema.StringAttribute{
 				Description: "PEM-encoded private key for DPoP proof generation",
@@ -84,13 +96,6 @@ func (p *pdndProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 		return
 	}
 
-	// Validate access_token
-	accessToken := config.AccessToken.ValueString()
-	if accessToken == "" {
-		resp.Diagnostics.AddError("Invalid Configuration", "access_token must not be empty")
-		return
-	}
-
 	// Validate dpop_key_id
 	dpopKeyID := config.DPoPKeyID.ValueString()
 	if dpopKeyID == "" {
@@ -118,12 +123,52 @@ func (p *pdndProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 			return
 		}
 	}
+	timeout := time.Duration(timeoutS) * time.Second
+
+	// Determine auth mode
+	hasAccessToken := !config.AccessToken.IsNull() && !config.AccessToken.IsUnknown() && config.AccessToken.ValueString() != ""
+	hasClientID := !config.ClientID.IsNull() && !config.ClientID.IsUnknown() && config.ClientID.ValueString() != ""
+	hasPurposeID := !config.PurposeID.IsNull() && !config.PurposeID.IsUnknown() && config.PurposeID.ValueString() != ""
+
+	var tokenProvider client.TokenProvider
+
+	if hasAccessToken && (hasClientID || hasPurposeID) {
+		resp.Diagnostics.AddError("Invalid auth config",
+			"Cannot set both 'access_token' and 'client_id'/'purpose_id'. Use either manual token or auto-token mode.")
+		return
+	}
+
+	if hasAccessToken {
+		// Manual mode
+		tokenProvider = client.NewStaticTokenProvider(config.AccessToken.ValueString())
+	} else if hasClientID && hasPurposeID {
+		// Auto-token mode
+		tokenEndpoint := "https://auth.interop.pagopa.it/token.oauth2"
+		if !config.TokenEndpoint.IsNull() && !config.TokenEndpoint.IsUnknown() {
+			tokenEndpoint = config.TokenEndpoint.ValueString()
+		}
+		tokenProvider = client.NewAutoTokenProvider(
+			config.ClientID.ValueString(),
+			config.PurposeID.ValueString(),
+			tokenEndpoint,
+			proofGen,
+			&http.Client{Timeout: timeout},
+		)
+	} else if hasClientID || hasPurposeID {
+		resp.Diagnostics.AddError("Incomplete auth config",
+			"Both 'client_id' and 'purpose_id' are required for automatic token generation.")
+		return
+	} else {
+		resp.Diagnostics.AddError("Missing auth config",
+			"Either 'access_token' or both 'client_id' and 'purpose_id' must be provided.")
+		return
+	}
 
 	// Build transport chain: DPoP -> Retry -> http.Client
 	dpopTransport := &client.DPoPTransport{
-		Base:        http.DefaultTransport,
-		AccessToken: accessToken,
-		ProofGen:    proofGen,
+		Base:          http.DefaultTransport,
+		TokenProvider: tokenProvider,
+		ProofGen:      proofGen,
 	}
 
 	retryTransport := &client.RetryTransport{
@@ -132,7 +177,7 @@ func (p *pdndProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 
 	httpClient := &http.Client{
 		Transport: retryTransport,
-		Timeout:   time.Duration(timeoutS) * time.Second,
+		Timeout:   timeout,
 	}
 
 	// Create generated client

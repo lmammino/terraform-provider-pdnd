@@ -13,13 +13,30 @@ A Terraform provider for managing resources on the [PDND Interoperability](https
 
 ## Authentication
 
-The provider authenticates using DPoP (Demonstration of Proof-of-Possession). You need:
+The provider authenticates using DPoP (Demonstration of Proof-of-Possession). It supports two modes:
 
-- An **access token** for the PDND API
-- A **PEM-encoded RSA private key** for DPoP proof generation
-- A **key ID** identifying your DPoP key
+- **Auto-token (recommended):** Supply `client_id` and `purpose_id` -- the provider automatically obtains and refreshes access tokens.
+- **Manual token:** Supply a pre-obtained `access_token` for debugging or advanced use cases.
+
+Both modes require a **PEM-encoded private key** and a **key ID** from the PDND portal.
+
+See **[AUTH.md](AUTH.md)** for a detailed step-by-step guide on how to obtain each credential.
 
 ## Provider Configuration
+
+### Auto-Token Mode (Recommended)
+
+```hcl
+provider "pdnd" {
+  base_url         = "https://api.interop.pagopa.it/v3"
+  client_id        = var.pdnd_client_id
+  purpose_id       = var.pdnd_purpose_id
+  dpop_private_key = file(var.dpop_private_key_path)
+  dpop_key_id      = var.dpop_key_id
+}
+```
+
+### Manual Token Mode
 
 ```hcl
 provider "pdnd" {
@@ -30,13 +47,18 @@ provider "pdnd" {
 }
 ```
 
-| Attribute          | Type   | Required | Description                                |
-|--------------------|--------|----------|--------------------------------------------|
-| `base_url`         | string | yes      | Base URL of the PDND API                   |
-| `access_token`     | string | yes      | Access token for API authentication        |
-| `dpop_private_key` | string | yes      | PEM-encoded private key for DPoP           |
-| `dpop_key_id`      | string | yes      | Key ID for the DPoP private key            |
-| `request_timeout_s`| number | no       | Request timeout in seconds (default: 30)   |
+| Attribute          | Type   | Required | Description                                                              |
+|--------------------|--------|----------|--------------------------------------------------------------------------|
+| `base_url`         | string | yes      | Base URL of the PDND API                                                 |
+| `client_id`        | string | no*      | PDND client UUID for automatic token generation                          |
+| `purpose_id`       | string | no*      | PDND purpose UUID for automatic token generation                         |
+| `access_token`     | string | no*      | Pre-obtained access token (manual mode)                                  |
+| `token_endpoint`   | string | no       | Token endpoint URL (default: `https://auth.interop.pagopa.it/token.oauth2`) |
+| `dpop_private_key` | string | yes      | PEM-encoded private key for DPoP                                         |
+| `dpop_key_id`      | string | yes      | Key ID for the DPoP private key                                          |
+| `request_timeout_s`| number | no       | Request timeout in seconds (default: 30)                                 |
+
+\* Either `client_id` + `purpose_id` (auto-token) or `access_token` (manual) must be provided. They are mutually exclusive.
 
 ## Quick Example
 
