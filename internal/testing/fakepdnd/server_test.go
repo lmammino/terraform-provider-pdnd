@@ -34,7 +34,7 @@ func doRequest(t *testing.T, client *http.Client, method, url string, body inter
 	if err != nil {
 		t.Fatalf("do request: %v", err)
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck // test helper
 
 	var result map[string]interface{}
 	_ = json.NewDecoder(resp.Body).Decode(&result)
@@ -51,7 +51,11 @@ func createAgreementViaAPI(t *testing.T, client *http.Client, baseURL string) st
 	if status != 201 {
 		t.Fatalf("create agreement: expected 201, got %d", status)
 	}
-	return resp["id"].(string)
+	id, ok := resp["id"].(string)
+	if !ok {
+		t.Fatal("response missing id field")
+	}
+	return id
 }
 
 func TestFakeServer_CreateAgreement(t *testing.T) {
@@ -467,7 +471,10 @@ func TestFakeServer_ListAgreements(t *testing.T) {
 	if status != 200 {
 		t.Fatalf("expected 200, got %d", status)
 	}
-	results := resp["results"].([]interface{})
+	results, ok := resp["results"].([]interface{})
+	if !ok {
+		t.Fatal("response missing results field")
+	}
 	if len(results) != 2 {
 		t.Fatalf("expected 2 ACTIVE agreements, got %d", len(results))
 	}
@@ -498,9 +505,12 @@ func TestFakeServer_ListAgreementPurposes(t *testing.T) {
 	if status != 200 {
 		t.Fatalf("expected 200, got %d", status)
 	}
-	results := resp["results"].([]interface{})
-	if len(results) != 2 {
-		t.Fatalf("expected 2 purposes, got %d", len(results))
+	results2, ok := resp["results"].([]interface{})
+	if !ok {
+		t.Fatal("response missing results field")
+	}
+	if len(results2) != 2 {
+		t.Fatalf("expected 2 purposes, got %d", len(results2))
 	}
 }
 
@@ -523,12 +533,22 @@ func TestFakeServer_ListPagination(t *testing.T) {
 	if status != 200 {
 		t.Fatalf("expected 200, got %d", status)
 	}
-	results := resp["results"].([]interface{})
-	if len(results) != 2 {
-		t.Fatalf("expected 2 results, got %d", len(results))
+	results3, ok := resp["results"].([]interface{})
+	if !ok {
+		t.Fatal("response missing results field")
 	}
-	pagination := resp["pagination"].(map[string]interface{})
-	if int(pagination["totalCount"].(float64)) != 5 {
-		t.Fatalf("expected totalCount 5, got %v", pagination["totalCount"])
+	if len(results3) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(results3))
+	}
+	pagination, ok := resp["pagination"].(map[string]interface{})
+	if !ok {
+		t.Fatal("response missing pagination field")
+	}
+	totalCount, ok := pagination["totalCount"].(float64)
+	if !ok {
+		t.Fatal("pagination missing totalCount")
+	}
+	if int(totalCount) != 5 {
+		t.Fatalf("expected totalCount 5, got %v", totalCount)
 	}
 }

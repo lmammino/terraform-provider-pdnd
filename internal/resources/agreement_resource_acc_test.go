@@ -50,67 +50,6 @@ provider "pdnd" {
 `, serverURL, testPrivateKeyPEM)
 }
 
-// forceAgreementsDraft changes all agreements in the fake server to DRAFT state
-// so they can be cleaned up by the test framework's post-test destroy.
-// This must be used in combination with a subsequent RefreshState step so that
-// the terraform state file picks up the DRAFT state from the fake server.
-func forceAgreementsDraft(fake *fakepdnd.FakeServer) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		for _, rs := range s.RootModule().Resources {
-			if rs.Type != "pdnd_agreement" {
-				continue
-			}
-			id, err := uuid.Parse(rs.Primary.ID)
-			if err != nil {
-				continue
-			}
-			a := fake.GetAgreement(id)
-			if a != nil {
-				fake.SeedAgreement(fakepdnd.StoredAgreement{
-					ID:           a.ID,
-					EServiceID:   a.EServiceID,
-					DescriptorID: a.DescriptorID,
-					ProducerID:   a.ProducerID,
-					ConsumerID:   a.ConsumerID,
-					State:        "DRAFT",
-					CreatedAt:    a.CreatedAt,
-				})
-			}
-		}
-		return nil
-	}
-}
-
-// cleanupStep returns a RefreshState step that first forces all agreements to
-// DRAFT in the fake server, then refreshes state so Terraform sees them as
-// deletable during post-test destroy.
-func cleanupStep(fake *fakepdnd.FakeServer) resource.TestStep {
-	return resource.TestStep{
-		RefreshState: true,
-		PreConfig: func() {
-			// We can't access terraform state here, but we can force ALL
-			// agreements in the fake server to DRAFT.
-			forceAllAgreementsDraft(fake)
-		},
-		// After this step, expected_state will show DRAFT instead of ACTIVE,
-		// which means desired_state != state. That causes a non-empty plan.
-		ExpectNonEmptyPlan: true,
-	}
-}
-
-// forceAllAgreementsDraft forces ALL agreements in the fake server to DRAFT.
-// This is a brute-force cleanup: since each test creates its own fake server,
-// there's no risk of cross-test interference.
-func forceAllAgreementsDraft(fake *fakepdnd.FakeServer) {
-	// We need to iterate all agreements. The FakeServer API only exposes
-	// GetAgreement(id), but since each test uses its own server and creates
-	// at most a few agreements, we track IDs in the test and clean up.
-	// However, for simplicity we'll use a different approach: we'll track IDs
-	// via the Check function in the previous step.
-	//
-	// Actually, for the PreConfig approach, we need agreement IDs before the step.
-	// We'll use a tracking slice that gets populated by a Check function.
-}
 
 // agreementIDTracker tracks agreement IDs seen in terraform state.
 type agreementIDTracker struct {

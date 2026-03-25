@@ -111,8 +111,8 @@ func TestDPoPTransport_ProofMethodMatchesRequest(t *testing.T) {
 				t.Fatalf("failed to parse DPoP token: %v", err)
 			}
 
-			claims := token.Claims.(jwt.MapClaims)
-			htm := claims["htm"].(string)
+			claims, _ := token.Claims.(jwt.MapClaims)
+			htm, _ := claims["htm"].(string)
 			if htm != method {
 				t.Errorf("expected htm=%q, got %q", method, htm)
 			}
@@ -154,8 +154,8 @@ func TestDPoPTransport_ProofURLMatchesRequest(t *testing.T) {
 		t.Fatalf("failed to parse DPoP token: %v", err)
 	}
 
-	claims := token.Claims.(jwt.MapClaims)
-	htu := claims["htu"].(string)
+	claims, _ := token.Claims.(jwt.MapClaims)
+	htu, _ := claims["htu"].(string)
 
 	// htu should be the server URL + path, without query string.
 	expectedPrefix := server.URL + "/v3/agreements"

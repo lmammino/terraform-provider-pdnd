@@ -68,7 +68,7 @@ func CheckResponse(resp *http.Response) error {
 		return nil
 	}
 
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck // best-effort close
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return &APIError{

@@ -103,7 +103,10 @@ func TestGenerateProof_ContainsCorrectMethod(t *testing.T) {
 			}
 
 			token := parseProofToken(t, proof, &key.PublicKey)
-			claims := token.Claims.(jwt.MapClaims)
+			claims, ok := token.Claims.(jwt.MapClaims)
+			if !ok {
+				t.Fatal("unexpected claims type")
+			}
 			htm, ok := claims["htm"].(string)
 			if !ok || htm != method {
 				t.Errorf("expected htm=%q, got %v", method, claims["htm"])
@@ -125,7 +128,10 @@ func TestGenerateProof_ContainsCorrectURL(t *testing.T) {
 	}
 
 	token := parseProofToken(t, proof, &key.PublicKey)
-	claims := token.Claims.(jwt.MapClaims)
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		t.Fatal("unexpected claims type")
+	}
 	htu, ok := claims["htu"].(string)
 	if !ok {
 		t.Fatalf("htu claim missing or not a string")
@@ -149,8 +155,10 @@ func TestGenerateProof_UniqueJTI(t *testing.T) {
 	token1 := parseProofToken(t, proof1, &key.PublicKey)
 	token2 := parseProofToken(t, proof2, &key.PublicKey)
 
-	jti1 := token1.Claims.(jwt.MapClaims)["jti"].(string)
-	jti2 := token2.Claims.(jwt.MapClaims)["jti"].(string)
+	claims1, _ := token1.Claims.(jwt.MapClaims)
+	claims2, _ := token2.Claims.(jwt.MapClaims)
+	jti1, _ := claims1["jti"].(string)
+	jti2, _ := claims2["jti"].(string)
 
 	if jti1 == jti2 {
 		t.Errorf("expected unique jti values, both were %q", jti1)

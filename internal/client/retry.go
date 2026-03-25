@@ -41,7 +41,7 @@ func (t *RetryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		if err != nil {
 			return nil, err
 		}
-		req.Body.Close()
+		_ = req.Body.Close()
 	}
 
 	base := t.Base
@@ -80,8 +80,8 @@ func (t *RetryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 		// Discard the response body before retrying.
 		if resp.Body != nil {
-			io.Copy(io.Discard, resp.Body)
-			resp.Body.Close()
+			_, _ = io.Copy(io.Discard, resp.Body)
+			_ = resp.Body.Close()
 		}
 	}
 

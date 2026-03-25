@@ -414,9 +414,7 @@ func TestUpgradeAgreement_Contract(t *testing.T) {
 		gotPath = r.URL.Path
 		// Verify no body was sent
 		body, _ := io.ReadAll(r.Body)
-		if len(body) > 0 && string(body) != "{}" && string(body) != "" {
-			// We allow empty body or empty JSON object
-		}
+		_ = body // no body expected for this endpoint
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(responseJSON))
