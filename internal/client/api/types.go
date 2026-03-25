@@ -261,6 +261,12 @@ type VerifiedAttributesPage struct {
 	Pagination Pagination
 }
 
+// DescriptorAttributeEntry represents an attribute assigned to a descriptor group.
+type DescriptorAttributeEntry struct {
+	AttributeID uuid.UUID
+	GroupIndex  int32
+}
+
 // Purpose represents a PDND purpose associated with an agreement.
 type Purpose struct {
 	ID                  uuid.UUID

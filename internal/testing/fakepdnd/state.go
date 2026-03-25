@@ -85,6 +85,11 @@ type StoredVerifiedAttribute struct {
 	CreatedAt   time.Time
 }
 
+// StoredDescriptorAttributeGroup represents an attribute group on a descriptor.
+type StoredDescriptorAttributeGroup struct {
+	Attributes []uuid.UUID
+}
+
 // StoredPurpose represents a purpose in the fake server's state.
 type StoredPurpose struct {
 	ID                  uuid.UUID

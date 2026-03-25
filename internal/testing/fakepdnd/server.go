@@ -20,6 +20,10 @@ type FakeServer struct {
 	certifiedAttributes  map[uuid.UUID]*StoredCertifiedAttribute
 	declaredAttributes   map[uuid.UUID]*StoredDeclaredAttribute
 	verifiedAttributes   map[uuid.UUID]*StoredVerifiedAttribute
+	// descriptor attribute groups: eserviceID -> descriptorID -> groups
+	descCertifiedAttrGroups map[uuid.UUID]map[uuid.UUID][]StoredDescriptorAttributeGroup
+	descDeclaredAttrGroups  map[uuid.UUID]map[uuid.UUID][]StoredDescriptorAttributeGroup
+	descVerifiedAttrGroups  map[uuid.UUID]map[uuid.UUID][]StoredDescriptorAttributeGroup
 	approvalPolicy       string    // "AUTOMATIC" (default) or "MANUAL"
 	producerID           uuid.UUID // fixed per server instance
 	consumerID           uuid.UUID // fixed per server instance
@@ -29,17 +33,20 @@ type FakeServer struct {
 // NewFakeServer creates a new fake PDND server with default settings.
 func NewFakeServer() *FakeServer {
 	s := &FakeServer{
-		agreements:          make(map[uuid.UUID]*StoredAgreement),
-		purposes:            make(map[uuid.UUID][]StoredPurpose),
-		eservices:           make(map[uuid.UUID]*StoredEService),
-		descriptors:         make(map[uuid.UUID]map[uuid.UUID]*StoredDescriptor),
-		descriptorCount:     make(map[uuid.UUID]int),
-		certifiedAttributes: make(map[uuid.UUID]*StoredCertifiedAttribute),
-		declaredAttributes:  make(map[uuid.UUID]*StoredDeclaredAttribute),
-		verifiedAttributes:  make(map[uuid.UUID]*StoredVerifiedAttribute),
-		approvalPolicy:      "AUTOMATIC",
-		producerID:          uuid.New(),
-		consumerID:          uuid.New(),
+		agreements:              make(map[uuid.UUID]*StoredAgreement),
+		purposes:                make(map[uuid.UUID][]StoredPurpose),
+		eservices:               make(map[uuid.UUID]*StoredEService),
+		descriptors:             make(map[uuid.UUID]map[uuid.UUID]*StoredDescriptor),
+		descriptorCount:         make(map[uuid.UUID]int),
+		certifiedAttributes:     make(map[uuid.UUID]*StoredCertifiedAttribute),
+		declaredAttributes:      make(map[uuid.UUID]*StoredDeclaredAttribute),
+		verifiedAttributes:      make(map[uuid.UUID]*StoredVerifiedAttribute),
+		descCertifiedAttrGroups: make(map[uuid.UUID]map[uuid.UUID][]StoredDescriptorAttributeGroup),
+		descDeclaredAttrGroups:  make(map[uuid.UUID]map[uuid.UUID][]StoredDescriptorAttributeGroup),
+		descVerifiedAttrGroups:  make(map[uuid.UUID]map[uuid.UUID][]StoredDescriptorAttributeGroup),
+		approvalPolicy:          "AUTOMATIC",
+		producerID:              uuid.New(),
+		consumerID:              uuid.New(),
 	}
 	s.setupRoutes()
 	return s
@@ -158,6 +165,41 @@ func (s *FakeServer) SeedVerifiedAttribute(a StoredVerifiedAttribute) {
 	s.verifiedAttributes[a.ID] = &a
 }
 
+// SeedDescriptorAttributeGroups pre-populates attribute groups for a descriptor.
+func (s *FakeServer) SeedDescriptorAttributeGroups(eserviceID, descriptorID uuid.UUID, attrType string, groups []StoredDescriptorAttributeGroup) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	store := s.getAttrGroupStore(attrType)
+	if store[eserviceID] == nil {
+		store[eserviceID] = make(map[uuid.UUID][]StoredDescriptorAttributeGroup)
+	}
+	store[eserviceID][descriptorID] = groups
+}
+
+// GetDescriptorAttributeGroups returns stored attribute groups for test assertions.
+func (s *FakeServer) GetDescriptorAttributeGroups(eserviceID, descriptorID uuid.UUID, attrType string) []StoredDescriptorAttributeGroup {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	store := s.getAttrGroupStore(attrType)
+	if store[eserviceID] == nil {
+		return nil
+	}
+	return store[eserviceID][descriptorID]
+}
+
+func (s *FakeServer) getAttrGroupStore(attrType string) map[uuid.UUID]map[uuid.UUID][]StoredDescriptorAttributeGroup {
+	switch attrType {
+	case "certified":
+		return s.descCertifiedAttrGroups
+	case "declared":
+		return s.descDeclaredAttrGroups
+	case "verified":
+		return s.descVerifiedAttrGroups
+	default:
+		return nil
+	}
+}
+
 func (s *FakeServer) setupRoutes() {
 	s.mux = http.NewServeMux()
 	s.mux.HandleFunc("POST /agreements", s.handleCreateAgreement)
@@ -195,6 +237,16 @@ func (s *FakeServer) setupRoutes() {
 	s.mux.HandleFunc("POST /eservices/{eserviceId}/descriptors/{descriptorId}/suspend", s.handleSuspendDescriptor)
 	s.mux.HandleFunc("POST /eservices/{eserviceId}/descriptors/{descriptorId}/unsuspend", s.handleUnsuspendDescriptor)
 	s.mux.HandleFunc("POST /eservices/{eserviceId}/descriptors/{descriptorId}/approve", s.handleApproveDelegatedDescriptor)
+
+	// Descriptor attribute group routes.
+	for _, at := range []string{"certified", "declared", "verified"} {
+		attrType := at // capture for closure
+		prefix := "/eservices/{eserviceId}/descriptors/{descriptorId}/" + attrType + "Attributes"
+		s.mux.HandleFunc("GET "+prefix, s.makeHandleListDescriptorAttributes(attrType))
+		s.mux.HandleFunc("POST "+prefix+"/groups", s.makeHandleCreateDescriptorAttributeGroup(attrType))
+		s.mux.HandleFunc("POST "+prefix+"/groups/{groupIndex}/attributes", s.makeHandleAssignDescriptorAttributesToGroup(attrType))
+		s.mux.HandleFunc("DELETE "+prefix+"/groups/{groupIndex}/attributes/{attributeId}", s.makeHandleDeleteDescriptorAttributeFromGroup(attrType))
+	}
 
 	// Attribute routes.
 	s.mux.HandleFunc("GET /certifiedAttributes", s.handleListCertifiedAttributes)

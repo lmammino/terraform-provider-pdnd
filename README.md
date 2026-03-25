@@ -77,6 +77,9 @@ resource "pdnd_agreement" "example" {
 | `pdnd_agreement`             | Manages a PDND agreement lifecycle            |
 | `pdnd_eservice`              | Manages a PDND e-service                      |
 | `pdnd_eservice_descriptor`   | Manages an e-service descriptor lifecycle     |
+| `pdnd_eservice_descriptor_certified_attributes` | Manages certified attribute groups on a descriptor |
+| `pdnd_eservice_descriptor_declared_attributes`  | Manages declared attribute groups on a descriptor  |
+| `pdnd_eservice_descriptor_verified_attributes`  | Manages verified attribute groups on a descriptor  |
 
 ## Available Data Sources
 
