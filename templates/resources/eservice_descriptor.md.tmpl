@@ -1,0 +1,23 @@
+---
+page_title: "pdnd_eservice_descriptor Resource - PDND"
+description: |-
+  Manages a PDND E-Service Descriptor.
+---
+
+# pdnd_eservice_descriptor (Resource)
+
+Manages a PDND E-Service Descriptor lifecycle, including creation, publication, suspension, and quota updates.
+
+The `desired_state` attribute controls the intended lifecycle state. The provider will automatically perform the necessary API operations (publish, suspend, unsuspend) to reach the desired state.
+
+## Example Usage
+
+{{ tffile "examples/resources/pdnd_eservice_descriptor/resource.tf" }}
+
+{{ .SchemaMarkdown | trimspace }}
+
+## Import
+
+Descriptors can be imported using the composite ID `eservice_id/descriptor_id`:
+
+{{ codefile "shell" "examples/resources/pdnd_eservice_descriptor/import.sh" }}

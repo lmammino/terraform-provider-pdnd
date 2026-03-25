@@ -70,6 +70,65 @@ func agreementToJSON(a *StoredAgreement) map[string]interface{} {
 	return m
 }
 
+// eserviceToJSON converts a StoredEService to a JSON-serializable map
+// matching the OpenAPI EService schema field names (camelCase).
+func eserviceToJSON(e *StoredEService) map[string]interface{} {
+	return map[string]interface{}{
+		"id":                      e.ID.String(),
+		"producerId":              e.ProducerID.String(),
+		"name":                    e.Name,
+		"description":             e.Description,
+		"technology":              e.Technology,
+		"mode":                    e.Mode,
+		"isSignalHubEnabled":      e.IsSignalHubEnabled,
+		"isConsumerDelegable":     e.IsConsumerDelegable,
+		"isClientAccessDelegable": e.IsClientAccessDelegable,
+		"personalData":            e.PersonalData,
+	}
+}
+
+// descriptorToJSON converts a StoredDescriptor to a JSON-serializable map
+// matching the OpenAPI Descriptor schema field names (camelCase).
+func descriptorToJSON(d *StoredDescriptor) map[string]interface{} {
+	audience := d.Audience
+	if audience == nil {
+		audience = []string{}
+	}
+	serverUrls := d.ServerUrls
+	if serverUrls == nil {
+		serverUrls = []string{}
+	}
+	m := map[string]interface{}{
+		"id":                      d.ID.String(),
+		"eserviceId":              d.EServiceID.String(),
+		"version":                 d.Version,
+		"state":                   d.State,
+		"agreementApprovalPolicy": d.AgreementApprovalPolicy,
+		"audience":                audience,
+		"dailyCallsPerConsumer":   d.DailyCallsPerConsumer,
+		"dailyCallsTotal":        d.DailyCallsTotal,
+		"voucherLifespan":        d.VoucherLifespan,
+		"serverUrls":             serverUrls,
+		"createdAt":              d.CreatedAt.UTC().Format("2006-01-02T15:04:05Z"),
+	}
+	if d.Description != "" {
+		m["description"] = d.Description
+	}
+	if d.PublishedAt != nil {
+		m["publishedAt"] = d.PublishedAt.UTC().Format("2006-01-02T15:04:05Z")
+	}
+	if d.SuspendedAt != nil {
+		m["suspendedAt"] = d.SuspendedAt.UTC().Format("2006-01-02T15:04:05Z")
+	}
+	if d.DeprecatedAt != nil {
+		m["deprecatedAt"] = d.DeprecatedAt.UTC().Format("2006-01-02T15:04:05Z")
+	}
+	if d.ArchivedAt != nil {
+		m["archivedAt"] = d.ArchivedAt.UTC().Format("2006-01-02T15:04:05Z")
+	}
+	return m
+}
+
 // purposeToJSON converts a StoredPurpose to a JSON-serializable map.
 func purposeToJSON(p *StoredPurpose) map[string]interface{} {
 	m := map[string]interface{}{

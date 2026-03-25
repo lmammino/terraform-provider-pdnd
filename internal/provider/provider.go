@@ -145,12 +145,14 @@ func (p *pdndProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 		return
 	}
 
-	// Create API wrapper
+	// Create API wrappers
 	agreementsAPI := api.NewAgreementsClient(genClient)
+	eservicesAPI := api.NewEServicesClient(genClient)
 
 	// Store provider data
 	pd := &providerdata.ProviderData{
 		AgreementsAPI: agreementsAPI,
+		EServicesAPI:  eservicesAPI,
 	}
 
 	resp.DataSourceData = pd
@@ -160,6 +162,8 @@ func (p *pdndProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 func (p *pdndProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		resources.NewAgreementResource,
+		resources.NewEServiceResource,
+		resources.NewEServiceDescriptorResource,
 	}
 }
 
@@ -168,5 +172,9 @@ func (p *pdndProvider) DataSources(_ context.Context) []func() datasource.DataSo
 		datasources.NewAgreementDataSource,
 		datasources.NewAgreementsDataSource,
 		datasources.NewAgreementPurposesDataSource,
+		datasources.NewEServiceDataSource,
+		datasources.NewEServicesDataSource,
+		datasources.NewEServiceDescriptorDataSource,
+		datasources.NewEServiceDescriptorsDataSource,
 	}
 }

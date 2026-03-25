@@ -4,7 +4,7 @@
 
 A Terraform provider for managing resources on the [PDND Interoperability](https://developers.interop.pagopa.it/) platform (API v3).
 
-> **Milestone 1**: This provider currently supports agreement management only.
+> **Milestone 2**: This provider supports agreement and e-service management.
 
 ## Prerequisites
 
@@ -50,9 +50,11 @@ resource "pdnd_agreement" "example" {
 
 ## Available Resources
 
-| Resource            | Description                        |
-|---------------------|------------------------------------|
-| `pdnd_agreement`    | Manages a PDND agreement lifecycle |
+| Resource                     | Description                                   |
+|------------------------------|-----------------------------------------------|
+| `pdnd_agreement`             | Manages a PDND agreement lifecycle            |
+| `pdnd_eservice`              | Manages a PDND e-service                      |
+| `pdnd_eservice_descriptor`   | Manages an e-service descriptor lifecycle     |
 
 ## Available Data Sources
 
@@ -61,6 +63,10 @@ resource "pdnd_agreement" "example" {
 | `pdnd_agreement`             | Fetches a single agreement by ID                 |
 | `pdnd_agreements`            | Lists agreements with optional filters           |
 | `pdnd_agreement_purposes`    | Lists purposes associated with an agreement      |
+| `pdnd_eservice`              | Fetches a single e-service by ID                 |
+| `pdnd_eservices`             | Lists e-services with optional filters           |
+| `pdnd_eservice_descriptor`   | Fetches a single descriptor by ID                |
+| `pdnd_eservice_descriptors`  | Lists descriptors for an e-service               |
 
 ## Development
 

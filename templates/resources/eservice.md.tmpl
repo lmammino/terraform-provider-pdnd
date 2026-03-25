@@ -1,0 +1,23 @@
+---
+page_title: "pdnd_eservice Resource - PDND"
+description: |-
+  Manages a PDND E-Service.
+---
+
+# pdnd_eservice (Resource)
+
+Manages a PDND E-Service, including creation with an initial descriptor.
+
+The e-service is created with an initial descriptor in DRAFT state. To manage additional descriptors or publish the initial descriptor, use the `pdnd_eservice_descriptor` resource.
+
+## Example Usage
+
+{{ tffile "examples/resources/pdnd_eservice/resource.tf" }}
+
+{{ .SchemaMarkdown | trimspace }}
+
+## Import
+
+E-Services can be imported using their UUID:
+
+{{ codefile "shell" "examples/resources/pdnd_eservice/import.sh" }}

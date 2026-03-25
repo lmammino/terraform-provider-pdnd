@@ -110,6 +110,139 @@ func paginationFromGenerated(g generated.Pagination) Pagination {
 	}
 }
 
+// eserviceFromGenerated converts a generated EService to a domain EService.
+func eserviceFromGenerated(g *generated.EService) *EService {
+	if g == nil {
+		return nil
+	}
+
+	e := &EService{
+		ID:                      uuid.UUID(g.Id),
+		ProducerID:              uuid.UUID(g.ProducerId),
+		Name:                    g.Name,
+		Description:             g.Description,
+		Technology:              string(g.Technology),
+		Mode:                    string(g.Mode),
+		IsSignalHubEnabled:      g.IsSignalHubEnabled,
+		IsConsumerDelegable:     g.IsConsumerDelegable,
+		IsClientAccessDelegable: g.IsClientAccessDelegable,
+		PersonalData:            g.PersonalData,
+	}
+
+	if g.TemplateId != nil {
+		id := uuid.UUID(*g.TemplateId)
+		e.TemplateID = &id
+	}
+
+	return e
+}
+
+// eserviceSeedToGenerated converts a domain EServiceSeed to a generated EServiceSeed.
+func eserviceSeedToGenerated(s EServiceSeed) generated.EServiceSeed {
+	return generated.EServiceSeed{
+		Name:                    s.Name,
+		Description:             s.Description,
+		Technology:              generated.EServiceTechnology(s.Technology),
+		Mode:                    generated.EServiceMode(s.Mode),
+		IsSignalHubEnabled:      s.IsSignalHubEnabled,
+		IsConsumerDelegable:     s.IsConsumerDelegable,
+		IsClientAccessDelegable: s.IsClientAccessDelegable,
+		PersonalData:            s.PersonalData,
+		Descriptor: generated.DescriptorSeedForEServiceCreation{
+			AgreementApprovalPolicy: generated.AgreementApprovalPolicy(s.Descriptor.AgreementApprovalPolicy),
+			Audience:                s.Descriptor.Audience,
+			DailyCallsPerConsumer:   s.Descriptor.DailyCallsPerConsumer,
+			DailyCallsTotal:         s.Descriptor.DailyCallsTotal,
+			VoucherLifespan:         s.Descriptor.VoucherLifespan,
+			Description:             s.Descriptor.Description,
+		},
+	}
+}
+
+// descriptorFromGenerated converts a generated EServiceDescriptor to a domain Descriptor.
+func descriptorFromGenerated(g *generated.EServiceDescriptor) *Descriptor {
+	if g == nil {
+		return nil
+	}
+
+	return &Descriptor{
+		ID:                      uuid.UUID(g.Id),
+		Version:                 g.Version,
+		State:                   string(g.State),
+		AgreementApprovalPolicy: string(g.AgreementApprovalPolicy),
+		Audience:                g.Audience,
+		DailyCallsPerConsumer:   g.DailyCallsPerConsumer,
+		DailyCallsTotal:         g.DailyCallsTotal,
+		VoucherLifespan:         g.VoucherLifespan,
+		ServerUrls:              g.ServerUrls,
+		Description:             g.Description,
+		PublishedAt:             g.PublishedAt,
+		SuspendedAt:             g.SuspendedAt,
+		DeprecatedAt:            g.DeprecatedAt,
+		ArchivedAt:              g.ArchivedAt,
+	}
+}
+
+// descriptorSeedToGenerated converts a domain DescriptorSeed to a generated EServiceDescriptorSeed.
+func descriptorSeedToGenerated(s DescriptorSeed) generated.EServiceDescriptorSeed {
+	return generated.EServiceDescriptorSeed{
+		AgreementApprovalPolicy: generated.AgreementApprovalPolicy(s.AgreementApprovalPolicy),
+		Audience:                s.Audience,
+		DailyCallsPerConsumer:   s.DailyCallsPerConsumer,
+		DailyCallsTotal:         s.DailyCallsTotal,
+		VoucherLifespan:         s.VoucherLifespan,
+		Description:             s.Description,
+	}
+}
+
+// eserviceDraftUpdateToGenerated converts a domain EServiceDraftUpdate to a generated EServiceDraftUpdateSeed.
+func eserviceDraftUpdateToGenerated(s EServiceDraftUpdate) generated.EServiceDraftUpdateSeed {
+	gs := generated.EServiceDraftUpdateSeed{
+		Name:                    s.Name,
+		Description:             s.Description,
+		IsSignalHubEnabled:      s.IsSignalHubEnabled,
+		IsConsumerDelegable:     s.IsConsumerDelegable,
+		IsClientAccessDelegable: s.IsClientAccessDelegable,
+		PersonalData:            s.PersonalData,
+	}
+	if s.Technology != nil {
+		t := generated.EServiceTechnology(*s.Technology)
+		gs.Technology = &t
+	}
+	if s.Mode != nil {
+		m := generated.EServiceMode(*s.Mode)
+		gs.Mode = &m
+	}
+	return gs
+}
+
+// descriptorDraftUpdateToGenerated converts a domain DescriptorDraftUpdate to a generated EServiceDescriptorDraftUpdateSeed.
+func descriptorDraftUpdateToGenerated(s DescriptorDraftUpdate) generated.EServiceDescriptorDraftUpdateSeed {
+	gs := generated.EServiceDescriptorDraftUpdateSeed{
+		DailyCallsPerConsumer: s.DailyCallsPerConsumer,
+		DailyCallsTotal:       s.DailyCallsTotal,
+		VoucherLifespan:       s.VoucherLifespan,
+		Description:           s.Description,
+	}
+	if s.AgreementApprovalPolicy != nil {
+		p := generated.AgreementApprovalPolicy(*s.AgreementApprovalPolicy)
+		gs.AgreementApprovalPolicy = &p
+	}
+	if s.Audience != nil {
+		gs.Audience = &s.Audience
+	}
+	return gs
+}
+
+// descriptorQuotasUpdateToGenerated converts a domain DescriptorQuotasUpdate to a generated EServiceDescriptorQuotasUpdateSeed.
+func descriptorQuotasUpdateToGenerated(s DescriptorQuotasUpdate) generated.EServiceDescriptorQuotasUpdateSeed {
+	return generated.EServiceDescriptorQuotasUpdateSeed{
+		DailyCallsPerConsumer: s.DailyCallsPerConsumer,
+		DailyCallsTotal:       s.DailyCallsTotal,
+		VoucherLifespan:       s.VoucherLifespan,
+	}
+}
+
 // uuidsToOpenAPI converts a slice of uuid.UUID to a slice of openapi_types.UUID.
 func uuidsToOpenAPI(ids []uuid.UUID) []openapi_types.UUID {
 	if ids == nil {

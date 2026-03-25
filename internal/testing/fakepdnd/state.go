@@ -25,6 +25,40 @@ type StoredAgreement struct {
 	SuspendedAt         *time.Time
 }
 
+// StoredEService represents an e-service in the fake server's state.
+type StoredEService struct {
+	ID                      uuid.UUID
+	ProducerID              uuid.UUID
+	Name                    string
+	Description             string
+	Technology              string // REST, SOAP
+	Mode                    string // RECEIVE, DELIVER
+	IsSignalHubEnabled      bool
+	IsConsumerDelegable     bool
+	IsClientAccessDelegable bool
+	PersonalData            bool
+}
+
+// StoredDescriptor represents a descriptor in the fake server's state.
+type StoredDescriptor struct {
+	ID                      uuid.UUID
+	EServiceID              uuid.UUID
+	Version                 string
+	State                   string // DRAFT, PUBLISHED, DEPRECATED, SUSPENDED, ARCHIVED, WAITING_FOR_APPROVAL
+	AgreementApprovalPolicy string
+	Audience                []string
+	DailyCallsPerConsumer   int32
+	DailyCallsTotal         int32
+	VoucherLifespan         int32
+	ServerUrls              []string
+	Description             string
+	CreatedAt               time.Time
+	PublishedAt             *time.Time
+	SuspendedAt             *time.Time
+	DeprecatedAt            *time.Time
+	ArchivedAt              *time.Time
+}
+
 // StoredPurpose represents a purpose in the fake server's state.
 type StoredPurpose struct {
 	ID                  uuid.UUID

@@ -552,3 +552,543 @@ func TestFakeServer_ListPagination(t *testing.T) {
 		t.Fatalf("expected totalCount 5, got %v", totalCount)
 	}
 }
+
+// --- E-Service and Descriptor Tests ---
+
+// createEServiceViaAPI creates an e-service via the API and returns its ID.
+func createEServiceViaAPI(t *testing.T, client *http.Client, baseURL string) string {
+	t.Helper()
+	status, resp := doRequest(t, client, "POST", baseURL+"/eservices", map[string]interface{}{
+		"name":        "Test EService",
+		"description": "A test eservice",
+		"technology":  "REST",
+		"mode":        "DELIVER",
+	})
+	if status != 201 {
+		t.Fatalf("create eservice: expected 201, got %d", status)
+	}
+	id, ok := resp["id"].(string)
+	if !ok {
+		t.Fatal("response missing id field")
+	}
+	return id
+}
+
+// getFirstDescriptorID returns the first descriptor ID for an eservice by listing descriptors.
+func getFirstDescriptorID(t *testing.T, client *http.Client, baseURL, esID string) string {
+	t.Helper()
+	status, resp := doRequest(t, client, "GET", baseURL+"/eservices/"+esID+"/descriptors", nil)
+	if status != 200 {
+		t.Fatalf("list descriptors: expected 200, got %d", status)
+	}
+	results, ok := resp["results"].([]interface{})
+	if !ok || len(results) == 0 {
+		t.Fatal("expected at least one descriptor")
+	}
+	first, ok := results[0].(map[string]interface{})
+	if !ok {
+		t.Fatal("descriptor is not a map")
+	}
+	id, ok := first["id"].(string)
+	if !ok {
+		t.Fatal("descriptor missing id")
+	}
+	return id
+}
+
+func TestFakeServer_CreateEService(t *testing.T) {
+	fake := NewFakeServer()
+	ts := fake.Start()
+	defer ts.Close()
+
+	status, resp := doRequest(t, ts.Client(), "POST", ts.URL+"/eservices", map[string]interface{}{
+		"name":        "My EService",
+		"description": "Description",
+		"technology":  "REST",
+		"mode":        "DELIVER",
+	})
+
+	if status != 201 {
+		t.Fatalf("expected 201, got %d", status)
+	}
+	if resp["id"] == nil || resp["id"] == "" {
+		t.Fatal("expected non-empty id")
+	}
+	if resp["name"] != "My EService" {
+		t.Fatalf("expected name 'My EService', got %v", resp["name"])
+	}
+}
+
+func TestFakeServer_GetEService(t *testing.T) {
+	fake := NewFakeServer()
+	id := uuid.New()
+	fake.SeedEService(StoredEService{
+		ID:          id,
+		ProducerID:  fake.ProducerID(),
+		Name:        "Seeded",
+		Description: "Desc",
+		Technology:  "REST",
+		Mode:        "DELIVER",
+	})
+
+	ts := fake.Start()
+	defer ts.Close()
+
+	status, resp := doRequest(t, ts.Client(), "GET", ts.URL+"/eservices/"+id.String(), nil)
+	if status != 200 {
+		t.Fatalf("expected 200, got %d", status)
+	}
+	if resp["id"] != id.String() {
+		t.Fatalf("expected id %s, got %v", id, resp["id"])
+	}
+	if resp["name"] != "Seeded" {
+		t.Fatalf("expected name 'Seeded', got %v", resp["name"])
+	}
+}
+
+func TestFakeServer_GetEService_NotFound(t *testing.T) {
+	fake := NewFakeServer()
+	ts := fake.Start()
+	defer ts.Close()
+
+	status, _ := doRequest(t, ts.Client(), "GET", ts.URL+"/eservices/"+uuid.New().String(), nil)
+	if status != 404 {
+		t.Fatalf("expected 404, got %d", status)
+	}
+}
+
+func TestFakeServer_ListEServices(t *testing.T) {
+	fake := NewFakeServer()
+	for i := 0; i < 3; i++ {
+		fake.SeedEService(StoredEService{
+			ID:         uuid.New(),
+			ProducerID: fake.ProducerID(),
+			Name:       fmt.Sprintf("ES-%d", i),
+			Technology: "REST",
+			Mode:       "DELIVER",
+		})
+	}
+
+	ts := fake.Start()
+	defer ts.Close()
+
+	status, resp := doRequest(t, ts.Client(), "GET", ts.URL+"/eservices?technology=REST", nil)
+	if status != 200 {
+		t.Fatalf("expected 200, got %d", status)
+	}
+	results, ok := resp["results"].([]interface{})
+	if !ok {
+		t.Fatal("response missing results field")
+	}
+	if len(results) != 3 {
+		t.Fatalf("expected 3 eservices, got %d", len(results))
+	}
+}
+
+func TestFakeServer_DeleteDraftEService(t *testing.T) {
+	fake := NewFakeServer()
+	ts := fake.Start()
+	defer ts.Close()
+
+	esID := createEServiceViaAPI(t, ts.Client(), ts.URL)
+
+	status, _ := doRequest(t, ts.Client(), "DELETE", ts.URL+"/eservices/"+esID, nil)
+	if status != 200 {
+		t.Fatalf("expected 200, got %d", status)
+	}
+
+	// Verify gone.
+	status, _ = doRequest(t, ts.Client(), "GET", ts.URL+"/eservices/"+esID, nil)
+	if status != 404 {
+		t.Fatalf("expected 404 after delete, got %d", status)
+	}
+}
+
+func TestFakeServer_DeletePublishedEService_Fails(t *testing.T) {
+	fake := NewFakeServer()
+	ts := fake.Start()
+	defer ts.Close()
+
+	esID := createEServiceViaAPI(t, ts.Client(), ts.URL)
+	descID := getFirstDescriptorID(t, ts.Client(), ts.URL, esID)
+
+	// Publish the descriptor.
+	status, _ := doRequest(t, ts.Client(), "POST", ts.URL+"/eservices/"+esID+"/descriptors/"+descID+"/publish", nil)
+	if status != 200 {
+		t.Fatalf("publish: expected 200, got %d", status)
+	}
+
+	// Try to delete eservice.
+	status, _ = doRequest(t, ts.Client(), "DELETE", ts.URL+"/eservices/"+esID, nil)
+	if status != 409 {
+		t.Fatalf("expected 409, got %d", status)
+	}
+}
+
+func TestFakeServer_UpdateDraftEService(t *testing.T) {
+	fake := NewFakeServer()
+	ts := fake.Start()
+	defer ts.Close()
+
+	esID := createEServiceViaAPI(t, ts.Client(), ts.URL)
+
+	status, resp := doRequest(t, ts.Client(), "PATCH", ts.URL+"/eservices/"+esID, map[string]interface{}{
+		"name": "Updated Name",
+	})
+	if status != 200 {
+		t.Fatalf("expected 200, got %d", status)
+	}
+	if resp["name"] != "Updated Name" {
+		t.Fatalf("expected name 'Updated Name', got %v", resp["name"])
+	}
+}
+
+func TestFakeServer_UpdatePublishedEServiceName(t *testing.T) {
+	fake := NewFakeServer()
+	ts := fake.Start()
+	defer ts.Close()
+
+	esID := createEServiceViaAPI(t, ts.Client(), ts.URL)
+	descID := getFirstDescriptorID(t, ts.Client(), ts.URL, esID)
+
+	// Publish the descriptor.
+	doRequest(t, ts.Client(), "POST", ts.URL+"/eservices/"+esID+"/descriptors/"+descID+"/publish", nil)
+
+	status, resp := doRequest(t, ts.Client(), "PATCH", ts.URL+"/eservices/"+esID+"/name", map[string]interface{}{
+		"name": "New Name",
+	})
+	if status != 200 {
+		t.Fatalf("expected 200, got %d", status)
+	}
+	if resp["name"] != "New Name" {
+		t.Fatalf("expected name 'New Name', got %v", resp["name"])
+	}
+}
+
+func TestFakeServer_CreateDescriptor(t *testing.T) {
+	fake := NewFakeServer()
+	ts := fake.Start()
+	defer ts.Close()
+
+	esID := createEServiceViaAPI(t, ts.Client(), ts.URL)
+	descID := getFirstDescriptorID(t, ts.Client(), ts.URL, esID)
+
+	// Publish the existing draft so we can create a new one.
+	doRequest(t, ts.Client(), "POST", ts.URL+"/eservices/"+esID+"/descriptors/"+descID+"/publish", nil)
+
+	status, resp := doRequest(t, ts.Client(), "POST", ts.URL+"/eservices/"+esID+"/descriptors", map[string]interface{}{
+		"audience":              []string{"api/v1"},
+		"voucherLifespan":      600,
+		"dailyCallsPerConsumer": 1000,
+		"dailyCallsTotal":      10000,
+	})
+	if status != 201 {
+		t.Fatalf("expected 201, got %d", status)
+	}
+	if resp["state"] != "DRAFT" {
+		t.Fatalf("expected state DRAFT, got %v", resp["state"])
+	}
+	if resp["version"] != "2" {
+		t.Fatalf("expected version '2', got %v", resp["version"])
+	}
+}
+
+func TestFakeServer_GetDescriptor(t *testing.T) {
+	fake := NewFakeServer()
+	esID := uuid.New()
+	descID := uuid.New()
+	now := time.Now().UTC()
+	fake.SeedEService(StoredEService{
+		ID:         esID,
+		ProducerID: fake.ProducerID(),
+		Name:       "ES",
+		Technology: "REST",
+		Mode:       "DELIVER",
+	})
+	fake.SeedDescriptor(StoredDescriptor{
+		ID:         descID,
+		EServiceID: esID,
+		Version:    "1",
+		State:      "DRAFT",
+		CreatedAt:  now,
+	})
+
+	ts := fake.Start()
+	defer ts.Close()
+
+	status, resp := doRequest(t, ts.Client(), "GET", ts.URL+"/eservices/"+esID.String()+"/descriptors/"+descID.String(), nil)
+	if status != 200 {
+		t.Fatalf("expected 200, got %d", status)
+	}
+	if resp["id"] != descID.String() {
+		t.Fatalf("expected id %s, got %v", descID, resp["id"])
+	}
+	if resp["version"] != "1" {
+		t.Fatalf("expected version '1', got %v", resp["version"])
+	}
+}
+
+func TestFakeServer_ListDescriptors(t *testing.T) {
+	fake := NewFakeServer()
+	esID := uuid.New()
+	now := time.Now().UTC()
+	fake.SeedEService(StoredEService{
+		ID:         esID,
+		ProducerID: fake.ProducerID(),
+		Name:       "ES",
+		Technology: "REST",
+		Mode:       "DELIVER",
+	})
+	for i := 1; i <= 3; i++ {
+		fake.SeedDescriptor(StoredDescriptor{
+			ID:         uuid.New(),
+			EServiceID: esID,
+			Version:    fmt.Sprintf("%d", i),
+			State:      "DRAFT",
+			CreatedAt:  now,
+		})
+	}
+
+	ts := fake.Start()
+	defer ts.Close()
+
+	status, resp := doRequest(t, ts.Client(), "GET", ts.URL+"/eservices/"+esID.String()+"/descriptors", nil)
+	if status != 200 {
+		t.Fatalf("expected 200, got %d", status)
+	}
+	results, ok := resp["results"].([]interface{})
+	if !ok {
+		t.Fatal("response missing results field")
+	}
+	if len(results) != 3 {
+		t.Fatalf("expected 3 descriptors, got %d", len(results))
+	}
+}
+
+func TestFakeServer_PublishDescriptor(t *testing.T) {
+	fake := NewFakeServer()
+	ts := fake.Start()
+	defer ts.Close()
+
+	esID := createEServiceViaAPI(t, ts.Client(), ts.URL)
+	descID := getFirstDescriptorID(t, ts.Client(), ts.URL, esID)
+
+	status, resp := doRequest(t, ts.Client(), "POST", ts.URL+"/eservices/"+esID+"/descriptors/"+descID+"/publish", nil)
+	if status != 200 {
+		t.Fatalf("expected 200, got %d", status)
+	}
+	if resp["state"] != "PUBLISHED" {
+		t.Fatalf("expected state PUBLISHED, got %v", resp["state"])
+	}
+}
+
+func TestFakeServer_SuspendDescriptor(t *testing.T) {
+	fake := NewFakeServer()
+	ts := fake.Start()
+	defer ts.Close()
+
+	esID := createEServiceViaAPI(t, ts.Client(), ts.URL)
+	descID := getFirstDescriptorID(t, ts.Client(), ts.URL, esID)
+
+	// Publish first.
+	doRequest(t, ts.Client(), "POST", ts.URL+"/eservices/"+esID+"/descriptors/"+descID+"/publish", nil)
+
+	status, resp := doRequest(t, ts.Client(), "POST", ts.URL+"/eservices/"+esID+"/descriptors/"+descID+"/suspend", nil)
+	if status != 200 {
+		t.Fatalf("expected 200, got %d", status)
+	}
+	if resp["state"] != "SUSPENDED" {
+		t.Fatalf("expected state SUSPENDED, got %v", resp["state"])
+	}
+}
+
+func TestFakeServer_UnsuspendDescriptor(t *testing.T) {
+	fake := NewFakeServer()
+	ts := fake.Start()
+	defer ts.Close()
+
+	esID := createEServiceViaAPI(t, ts.Client(), ts.URL)
+	descID := getFirstDescriptorID(t, ts.Client(), ts.URL, esID)
+
+	// Publish then suspend.
+	doRequest(t, ts.Client(), "POST", ts.URL+"/eservices/"+esID+"/descriptors/"+descID+"/publish", nil)
+	doRequest(t, ts.Client(), "POST", ts.URL+"/eservices/"+esID+"/descriptors/"+descID+"/suspend", nil)
+
+	status, resp := doRequest(t, ts.Client(), "POST", ts.URL+"/eservices/"+esID+"/descriptors/"+descID+"/unsuspend", nil)
+	if status != 200 {
+		t.Fatalf("expected 200, got %d", status)
+	}
+	if resp["state"] != "PUBLISHED" {
+		t.Fatalf("expected state PUBLISHED, got %v", resp["state"])
+	}
+}
+
+func TestFakeServer_DeleteDraftDescriptor(t *testing.T) {
+	fake := NewFakeServer()
+	ts := fake.Start()
+	defer ts.Close()
+
+	esID := createEServiceViaAPI(t, ts.Client(), ts.URL)
+	descID := getFirstDescriptorID(t, ts.Client(), ts.URL, esID)
+
+	// Publish first descriptor so we can create a second.
+	doRequest(t, ts.Client(), "POST", ts.URL+"/eservices/"+esID+"/descriptors/"+descID+"/publish", nil)
+
+	// Create a second descriptor.
+	status, resp := doRequest(t, ts.Client(), "POST", ts.URL+"/eservices/"+esID+"/descriptors", map[string]interface{}{
+		"dailyCallsPerConsumer": 100,
+		"dailyCallsTotal":      1000,
+		"voucherLifespan":      300,
+	})
+	if status != 201 {
+		t.Fatalf("create descriptor: expected 201, got %d", status)
+	}
+	newDescID, ok := resp["id"].(string)
+	if !ok {
+		t.Fatal("response missing id field")
+	}
+
+	// Delete the new draft descriptor.
+	status, _ = doRequest(t, ts.Client(), "DELETE", ts.URL+"/eservices/"+esID+"/descriptors/"+newDescID, nil)
+	if status != 200 {
+		t.Fatalf("expected 200, got %d", status)
+	}
+
+	// Verify gone.
+	status, _ = doRequest(t, ts.Client(), "GET", ts.URL+"/eservices/"+esID+"/descriptors/"+newDescID, nil)
+	if status != 404 {
+		t.Fatalf("expected 404 after delete, got %d", status)
+	}
+}
+
+func TestFakeServer_DeletePublishedDescriptor_Fails(t *testing.T) {
+	fake := NewFakeServer()
+	ts := fake.Start()
+	defer ts.Close()
+
+	esID := createEServiceViaAPI(t, ts.Client(), ts.URL)
+	descID := getFirstDescriptorID(t, ts.Client(), ts.URL, esID)
+
+	// Publish.
+	doRequest(t, ts.Client(), "POST", ts.URL+"/eservices/"+esID+"/descriptors/"+descID+"/publish", nil)
+
+	status, _ := doRequest(t, ts.Client(), "DELETE", ts.URL+"/eservices/"+esID+"/descriptors/"+descID, nil)
+	if status != 409 {
+		t.Fatalf("expected 409, got %d", status)
+	}
+}
+
+func TestFakeServer_PublishDeprecatesPrevious(t *testing.T) {
+	fake := NewFakeServer()
+	ts := fake.Start()
+	defer ts.Close()
+
+	esID := createEServiceViaAPI(t, ts.Client(), ts.URL)
+	v1DescID := getFirstDescriptorID(t, ts.Client(), ts.URL, esID)
+
+	// Publish v1.
+	doRequest(t, ts.Client(), "POST", ts.URL+"/eservices/"+esID+"/descriptors/"+v1DescID+"/publish", nil)
+
+	// Create and publish v2.
+	status, resp := doRequest(t, ts.Client(), "POST", ts.URL+"/eservices/"+esID+"/descriptors", map[string]interface{}{
+		"dailyCallsPerConsumer": 100,
+		"dailyCallsTotal":      1000,
+		"voucherLifespan":      300,
+	})
+	if status != 201 {
+		t.Fatalf("create v2: expected 201, got %d", status)
+	}
+	v2DescID, ok := resp["id"].(string)
+	if !ok {
+		t.Fatal("response missing id field")
+	}
+
+	status, resp = doRequest(t, ts.Client(), "POST", ts.URL+"/eservices/"+esID+"/descriptors/"+v2DescID+"/publish", nil)
+	if status != 200 {
+		t.Fatalf("publish v2: expected 200, got %d", status)
+	}
+	if resp["state"] != "PUBLISHED" {
+		t.Fatalf("expected v2 state PUBLISHED, got %v", resp["state"])
+	}
+
+	// Check v1 is now DEPRECATED.
+	status, resp = doRequest(t, ts.Client(), "GET", ts.URL+"/eservices/"+esID+"/descriptors/"+v1DescID, nil)
+	if status != 200 {
+		t.Fatalf("get v1: expected 200, got %d", status)
+	}
+	if resp["state"] != "DEPRECATED" {
+		t.Fatalf("expected v1 state DEPRECATED, got %v", resp["state"])
+	}
+}
+
+func TestFakeServer_UpdateDraftDescriptor(t *testing.T) {
+	fake := NewFakeServer()
+	ts := fake.Start()
+	defer ts.Close()
+
+	esID := createEServiceViaAPI(t, ts.Client(), ts.URL)
+	descID := getFirstDescriptorID(t, ts.Client(), ts.URL, esID)
+
+	status, resp := doRequest(t, ts.Client(), "PATCH", ts.URL+"/eservices/"+esID+"/descriptors/"+descID, map[string]interface{}{
+		"dailyCallsPerConsumer": 5000,
+		"dailyCallsTotal":      50000,
+		"voucherLifespan":      900,
+	})
+	if status != 200 {
+		t.Fatalf("expected 200, got %d", status)
+	}
+	if resp["dailyCallsPerConsumer"] != float64(5000) {
+		t.Fatalf("expected dailyCallsPerConsumer 5000, got %v", resp["dailyCallsPerConsumer"])
+	}
+	if resp["dailyCallsTotal"] != float64(50000) {
+		t.Fatalf("expected dailyCallsTotal 50000, got %v", resp["dailyCallsTotal"])
+	}
+	if resp["voucherLifespan"] != float64(900) {
+		t.Fatalf("expected voucherLifespan 900, got %v", resp["voucherLifespan"])
+	}
+}
+
+func TestFakeServer_UpdatePublishedDescriptorQuotas(t *testing.T) {
+	fake := NewFakeServer()
+	ts := fake.Start()
+	defer ts.Close()
+
+	esID := createEServiceViaAPI(t, ts.Client(), ts.URL)
+	descID := getFirstDescriptorID(t, ts.Client(), ts.URL, esID)
+
+	// Publish first.
+	doRequest(t, ts.Client(), "POST", ts.URL+"/eservices/"+esID+"/descriptors/"+descID+"/publish", nil)
+
+	status, resp := doRequest(t, ts.Client(), "PATCH", ts.URL+"/eservices/"+esID+"/descriptors/"+descID+"/quotas", map[string]interface{}{
+		"dailyCallsPerConsumer": 2000,
+		"dailyCallsTotal":      20000,
+		"voucherLifespan":      1200,
+	})
+	if status != 200 {
+		t.Fatalf("expected 200, got %d", status)
+	}
+	if resp["dailyCallsPerConsumer"] != float64(2000) {
+		t.Fatalf("expected dailyCallsPerConsumer 2000, got %v", resp["dailyCallsPerConsumer"])
+	}
+	if resp["dailyCallsTotal"] != float64(20000) {
+		t.Fatalf("expected dailyCallsTotal 20000, got %v", resp["dailyCallsTotal"])
+	}
+}
+
+func TestFakeServer_InvalidTransition_PublishPublished(t *testing.T) {
+	fake := NewFakeServer()
+	ts := fake.Start()
+	defer ts.Close()
+
+	esID := createEServiceViaAPI(t, ts.Client(), ts.URL)
+	descID := getFirstDescriptorID(t, ts.Client(), ts.URL, esID)
+
+	// Publish once.
+	doRequest(t, ts.Client(), "POST", ts.URL+"/eservices/"+esID+"/descriptors/"+descID+"/publish", nil)
+
+	// Try to publish again.
+	status, _ := doRequest(t, ts.Client(), "POST", ts.URL+"/eservices/"+esID+"/descriptors/"+descID+"/publish", nil)
+	if status != 409 {
+		t.Fatalf("expected 409, got %d", status)
+	}
+}
