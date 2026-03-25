@@ -1,0 +1,23 @@
+---
+page_title: "pdnd_eservice_descriptor_declared_attributes Resource - PDND"
+description: |-
+  Manages declared attribute groups on a PDND E-Service Descriptor.
+---
+
+# pdnd_eservice_descriptor_declared_attributes (Resource)
+
+Manages declared attribute groups on a PDND E-Service Descriptor.
+
+Attributes within a group are OR'd (consumer needs at least one from each group). Groups are AND'd (consumer must satisfy all groups).
+
+## Example Usage
+
+{{ tffile "examples/resources/pdnd_eservice_descriptor_declared_attributes/resource.tf" }}
+
+{{ .SchemaMarkdown | trimspace }}
+
+## Import
+
+Descriptor declared attributes can be imported using the composite ID `eservice_id/descriptor_id`:
+
+{{ codefile "shell" "examples/resources/pdnd_eservice_descriptor_declared_attributes/import.sh" }}

@@ -23,4 +23,4 @@ drift-check: generate
 	git diff --exit-code internal/client/generated/
 
 docs:
-	go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate
+	go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate --provider-name pdnd
