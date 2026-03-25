@@ -129,6 +129,41 @@ func descriptorToJSON(d *StoredDescriptor) map[string]interface{} {
 	return m
 }
 
+// certifiedAttributeToJSON converts a StoredCertifiedAttribute to a JSON-serializable map
+// matching the OpenAPI CertifiedAttribute schema field names (camelCase).
+func certifiedAttributeToJSON(a *StoredCertifiedAttribute) map[string]interface{} {
+	return map[string]interface{}{
+		"id":          a.ID.String(),
+		"name":        a.Name,
+		"description": a.Description,
+		"code":        a.Code,
+		"origin":      a.Origin,
+		"createdAt":   a.CreatedAt.UTC().Format("2006-01-02T15:04:05Z"),
+	}
+}
+
+// declaredAttributeToJSON converts a StoredDeclaredAttribute to a JSON-serializable map
+// matching the OpenAPI DeclaredAttribute schema field names (camelCase).
+func declaredAttributeToJSON(a *StoredDeclaredAttribute) map[string]interface{} {
+	return map[string]interface{}{
+		"id":          a.ID.String(),
+		"name":        a.Name,
+		"description": a.Description,
+		"createdAt":   a.CreatedAt.UTC().Format("2006-01-02T15:04:05Z"),
+	}
+}
+
+// verifiedAttributeToJSON converts a StoredVerifiedAttribute to a JSON-serializable map
+// matching the OpenAPI VerifiedAttribute schema field names (camelCase).
+func verifiedAttributeToJSON(a *StoredVerifiedAttribute) map[string]interface{} {
+	return map[string]interface{}{
+		"id":          a.ID.String(),
+		"name":        a.Name,
+		"description": a.Description,
+		"createdAt":   a.CreatedAt.UTC().Format("2006-01-02T15:04:05Z"),
+	}
+}
+
 // purposeToJSON converts a StoredPurpose to a JSON-serializable map.
 func purposeToJSON(p *StoredPurpose) map[string]interface{} {
 	m := map[string]interface{}{

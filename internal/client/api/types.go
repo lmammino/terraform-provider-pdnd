@@ -217,6 +217,50 @@ type Pagination struct {
 	TotalCount int32
 }
 
+// CertifiedAttribute represents a PDND certified attribute.
+type CertifiedAttribute struct {
+	ID          uuid.UUID
+	Name        string
+	Description string
+	Code        string
+	Origin      string
+	CreatedAt   time.Time
+}
+
+// DeclaredAttribute represents a PDND declared attribute.
+type DeclaredAttribute struct {
+	ID          uuid.UUID
+	Name        string
+	Description string
+	CreatedAt   time.Time
+}
+
+// VerifiedAttribute represents a PDND verified attribute.
+type VerifiedAttribute struct {
+	ID          uuid.UUID
+	Name        string
+	Description string
+	CreatedAt   time.Time
+}
+
+// CertifiedAttributesPage is a paginated list of certified attributes.
+type CertifiedAttributesPage struct {
+	Results    []CertifiedAttribute
+	Pagination Pagination
+}
+
+// DeclaredAttributesPage is a paginated list of declared attributes.
+type DeclaredAttributesPage struct {
+	Results    []DeclaredAttribute
+	Pagination Pagination
+}
+
+// VerifiedAttributesPage is a paginated list of verified attributes.
+type VerifiedAttributesPage struct {
+	Results    []VerifiedAttribute
+	Pagination Pagination
+}
+
 // Purpose represents a PDND purpose associated with an agreement.
 type Purpose struct {
 	ID                  uuid.UUID

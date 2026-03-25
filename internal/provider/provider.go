@@ -193,11 +193,13 @@ func (p *pdndProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 	// Create API wrappers
 	agreementsAPI := api.NewAgreementsClient(genClient)
 	eservicesAPI := api.NewEServicesClient(genClient)
+	attributesAPI := api.NewAttributesClient(genClient)
 
 	// Store provider data
 	pd := &providerdata.ProviderData{
 		AgreementsAPI: agreementsAPI,
 		EServicesAPI:  eservicesAPI,
+		AttributesAPI: attributesAPI,
 	}
 
 	resp.DataSourceData = pd
@@ -221,5 +223,11 @@ func (p *pdndProvider) DataSources(_ context.Context) []func() datasource.DataSo
 		datasources.NewEServicesDataSource,
 		datasources.NewEServiceDescriptorDataSource,
 		datasources.NewEServiceDescriptorsDataSource,
+		datasources.NewCertifiedAttributeDataSource,
+		datasources.NewCertifiedAttributesDataSource,
+		datasources.NewDeclaredAttributeDataSource,
+		datasources.NewDeclaredAttributesDataSource,
+		datasources.NewVerifiedAttributeDataSource,
+		datasources.NewVerifiedAttributesDataSource,
 	}
 }

@@ -1092,3 +1092,218 @@ func TestFakeServer_InvalidTransition_PublishPublished(t *testing.T) {
 		t.Fatalf("expected 409, got %d", status)
 	}
 }
+
+// --- Attribute Tests ---
+
+func TestFakeServer_GetCertifiedAttribute(t *testing.T) {
+	fake := NewFakeServer()
+	id := uuid.New()
+	now := time.Now().UTC()
+	fake.SeedCertifiedAttribute(StoredCertifiedAttribute{
+		ID:          id,
+		Name:        "IPA",
+		Description: "IPA certified attribute",
+		Code:        "IPA_CODE",
+		Origin:      "IPA",
+		CreatedAt:   now,
+	})
+
+	ts := fake.Start()
+	defer ts.Close()
+
+	status, resp := doRequest(t, ts.Client(), "GET", ts.URL+"/certifiedAttributes/"+id.String(), nil)
+	if status != 200 {
+		t.Fatalf("expected 200, got %d", status)
+	}
+	if resp["id"] != id.String() {
+		t.Fatalf("expected id %s, got %v", id, resp["id"])
+	}
+	if resp["name"] != "IPA" {
+		t.Fatalf("expected name 'IPA', got %v", resp["name"])
+	}
+	if resp["code"] != "IPA_CODE" {
+		t.Fatalf("expected code 'IPA_CODE', got %v", resp["code"])
+	}
+	if resp["origin"] != "IPA" {
+		t.Fatalf("expected origin 'IPA', got %v", resp["origin"])
+	}
+
+	// Not found
+	status, _ = doRequest(t, ts.Client(), "GET", ts.URL+"/certifiedAttributes/"+uuid.New().String(), nil)
+	if status != 404 {
+		t.Fatalf("expected 404, got %d", status)
+	}
+}
+
+func TestFakeServer_ListCertifiedAttributes(t *testing.T) {
+	fake := NewFakeServer()
+	now := time.Now().UTC()
+	for i := 0; i < 3; i++ {
+		fake.SeedCertifiedAttribute(StoredCertifiedAttribute{
+			ID:          uuid.New(),
+			Name:        fmt.Sprintf("Cert-%d", i),
+			Description: fmt.Sprintf("Desc-%d", i),
+			Code:        fmt.Sprintf("CODE-%d", i),
+			Origin:      "IPA",
+			CreatedAt:   now,
+		})
+	}
+
+	ts := fake.Start()
+	defer ts.Close()
+
+	status, resp := doRequest(t, ts.Client(), "GET", ts.URL+"/certifiedAttributes", nil)
+	if status != 200 {
+		t.Fatalf("expected 200, got %d", status)
+	}
+	results, ok := resp["results"].([]interface{})
+	if !ok {
+		t.Fatal("response missing results field")
+	}
+	if len(results) != 3 {
+		t.Fatalf("expected 3 certified attributes, got %d", len(results))
+	}
+	pagination, ok := resp["pagination"].(map[string]interface{})
+	if !ok {
+		t.Fatal("response missing pagination field")
+	}
+	tc, ok := pagination["totalCount"].(float64)
+	if !ok {
+		t.Fatal("pagination missing totalCount")
+	}
+	if int(tc) != 3 {
+		t.Fatalf("expected totalCount 3, got %v", tc)
+	}
+}
+
+func TestFakeServer_GetDeclaredAttribute(t *testing.T) {
+	fake := NewFakeServer()
+	id := uuid.New()
+	now := time.Now().UTC()
+	fake.SeedDeclaredAttribute(StoredDeclaredAttribute{
+		ID:          id,
+		Name:        "ISO 27001",
+		Description: "ISO 27001 certification",
+		CreatedAt:   now,
+	})
+
+	ts := fake.Start()
+	defer ts.Close()
+
+	status, resp := doRequest(t, ts.Client(), "GET", ts.URL+"/declaredAttributes/"+id.String(), nil)
+	if status != 200 {
+		t.Fatalf("expected 200, got %d", status)
+	}
+	if resp["id"] != id.String() {
+		t.Fatalf("expected id %s, got %v", id, resp["id"])
+	}
+	if resp["name"] != "ISO 27001" {
+		t.Fatalf("expected name 'ISO 27001', got %v", resp["name"])
+	}
+
+	// Not found
+	status, _ = doRequest(t, ts.Client(), "GET", ts.URL+"/declaredAttributes/"+uuid.New().String(), nil)
+	if status != 404 {
+		t.Fatalf("expected 404, got %d", status)
+	}
+}
+
+func TestFakeServer_ListDeclaredAttributes(t *testing.T) {
+	fake := NewFakeServer()
+	now := time.Now().UTC()
+	for i := 0; i < 2; i++ {
+		fake.SeedDeclaredAttribute(StoredDeclaredAttribute{
+			ID:          uuid.New(),
+			Name:        fmt.Sprintf("Decl-%d", i),
+			Description: fmt.Sprintf("Desc-%d", i),
+			CreatedAt:   now,
+		})
+	}
+
+	ts := fake.Start()
+	defer ts.Close()
+
+	status, resp := doRequest(t, ts.Client(), "GET", ts.URL+"/declaredAttributes", nil)
+	if status != 200 {
+		t.Fatalf("expected 200, got %d", status)
+	}
+	results, ok := resp["results"].([]interface{})
+	if !ok {
+		t.Fatal("response missing results field")
+	}
+	if len(results) != 2 {
+		t.Fatalf("expected 2 declared attributes, got %d", len(results))
+	}
+}
+
+func TestFakeServer_GetVerifiedAttribute(t *testing.T) {
+	fake := NewFakeServer()
+	id := uuid.New()
+	now := time.Now().UTC()
+	fake.SeedVerifiedAttribute(StoredVerifiedAttribute{
+		ID:          id,
+		Name:        "SPID",
+		Description: "SPID verified attribute",
+		CreatedAt:   now,
+	})
+
+	ts := fake.Start()
+	defer ts.Close()
+
+	status, resp := doRequest(t, ts.Client(), "GET", ts.URL+"/verifiedAttributes/"+id.String(), nil)
+	if status != 200 {
+		t.Fatalf("expected 200, got %d", status)
+	}
+	if resp["id"] != id.String() {
+		t.Fatalf("expected id %s, got %v", id, resp["id"])
+	}
+	if resp["name"] != "SPID" {
+		t.Fatalf("expected name 'SPID', got %v", resp["name"])
+	}
+
+	// Not found
+	status, _ = doRequest(t, ts.Client(), "GET", ts.URL+"/verifiedAttributes/"+uuid.New().String(), nil)
+	if status != 404 {
+		t.Fatalf("expected 404, got %d", status)
+	}
+}
+
+func TestFakeServer_ListVerifiedAttributes(t *testing.T) {
+	fake := NewFakeServer()
+	now := time.Now().UTC()
+	for i := 0; i < 4; i++ {
+		fake.SeedVerifiedAttribute(StoredVerifiedAttribute{
+			ID:          uuid.New(),
+			Name:        fmt.Sprintf("Verified-%d", i),
+			Description: fmt.Sprintf("Desc-%d", i),
+			CreatedAt:   now,
+		})
+	}
+
+	ts := fake.Start()
+	defer ts.Close()
+
+	// Test with pagination
+	status, resp := doRequest(t, ts.Client(), "GET", ts.URL+"/verifiedAttributes?offset=0&limit=2", nil)
+	if status != 200 {
+		t.Fatalf("expected 200, got %d", status)
+	}
+	results, ok := resp["results"].([]interface{})
+	if !ok {
+		t.Fatal("response missing results field")
+	}
+	if len(results) != 2 {
+		t.Fatalf("expected 2 verified attributes, got %d", len(results))
+	}
+	pagination, ok := resp["pagination"].(map[string]interface{})
+	if !ok {
+		t.Fatal("response missing pagination field")
+	}
+	tc2, ok := pagination["totalCount"].(float64)
+	if !ok {
+		t.Fatal("pagination missing totalCount")
+	}
+	if int(tc2) != 4 {
+		t.Fatalf("expected totalCount 4, got %v", tc2)
+	}
+}

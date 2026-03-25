@@ -89,6 +89,12 @@ resource "pdnd_agreement" "example" {
 | `pdnd_eservices`             | Lists e-services with optional filters           |
 | `pdnd_eservice_descriptor`   | Fetches a single descriptor by ID                |
 | `pdnd_eservice_descriptors`  | Lists descriptors for an e-service               |
+| `pdnd_certified_attribute`   | Fetches a single certified attribute by ID        |
+| `pdnd_certified_attributes`  | Lists certified attributes with name filter       |
+| `pdnd_declared_attribute`    | Fetches a single declared attribute by ID         |
+| `pdnd_declared_attributes`   | Lists declared attributes with name filter        |
+| `pdnd_verified_attribute`    | Fetches a single verified attribute by ID         |
+| `pdnd_verified_attributes`   | Lists verified attributes with name filter        |
 
 ## Development
 

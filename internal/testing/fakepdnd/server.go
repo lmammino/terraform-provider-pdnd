@@ -11,29 +11,35 @@ import (
 
 // FakeServer is a deterministic, in-process fake PDND API server.
 type FakeServer struct {
-	mu              sync.RWMutex
-	agreements      map[uuid.UUID]*StoredAgreement
-	purposes        map[uuid.UUID][]StoredPurpose                   // keyed by agreementID
-	eservices       map[uuid.UUID]*StoredEService
-	descriptors     map[uuid.UUID]map[uuid.UUID]*StoredDescriptor   // eserviceID -> descriptorID -> descriptor
-	descriptorCount map[uuid.UUID]int                               // eserviceID -> next version number
-	approvalPolicy  string                                          // "AUTOMATIC" (default) or "MANUAL"
-	producerID      uuid.UUID                                       // fixed per server instance
-	consumerID      uuid.UUID                                       // fixed per server instance
-	mux             *http.ServeMux
+	mu                   sync.RWMutex
+	agreements           map[uuid.UUID]*StoredAgreement
+	purposes             map[uuid.UUID][]StoredPurpose                 // keyed by agreementID
+	eservices            map[uuid.UUID]*StoredEService
+	descriptors          map[uuid.UUID]map[uuid.UUID]*StoredDescriptor // eserviceID -> descriptorID -> descriptor
+	descriptorCount      map[uuid.UUID]int                             // eserviceID -> next version number
+	certifiedAttributes  map[uuid.UUID]*StoredCertifiedAttribute
+	declaredAttributes   map[uuid.UUID]*StoredDeclaredAttribute
+	verifiedAttributes   map[uuid.UUID]*StoredVerifiedAttribute
+	approvalPolicy       string    // "AUTOMATIC" (default) or "MANUAL"
+	producerID           uuid.UUID // fixed per server instance
+	consumerID           uuid.UUID // fixed per server instance
+	mux                  *http.ServeMux
 }
 
 // NewFakeServer creates a new fake PDND server with default settings.
 func NewFakeServer() *FakeServer {
 	s := &FakeServer{
-		agreements:      make(map[uuid.UUID]*StoredAgreement),
-		purposes:        make(map[uuid.UUID][]StoredPurpose),
-		eservices:       make(map[uuid.UUID]*StoredEService),
-		descriptors:     make(map[uuid.UUID]map[uuid.UUID]*StoredDescriptor),
-		descriptorCount: make(map[uuid.UUID]int),
-		approvalPolicy:  "AUTOMATIC",
-		producerID:      uuid.New(),
-		consumerID:      uuid.New(),
+		agreements:          make(map[uuid.UUID]*StoredAgreement),
+		purposes:            make(map[uuid.UUID][]StoredPurpose),
+		eservices:           make(map[uuid.UUID]*StoredEService),
+		descriptors:         make(map[uuid.UUID]map[uuid.UUID]*StoredDescriptor),
+		descriptorCount:     make(map[uuid.UUID]int),
+		certifiedAttributes: make(map[uuid.UUID]*StoredCertifiedAttribute),
+		declaredAttributes:  make(map[uuid.UUID]*StoredDeclaredAttribute),
+		verifiedAttributes:  make(map[uuid.UUID]*StoredVerifiedAttribute),
+		approvalPolicy:      "AUTOMATIC",
+		producerID:          uuid.New(),
+		consumerID:          uuid.New(),
 	}
 	s.setupRoutes()
 	return s
@@ -131,6 +137,27 @@ func (s *FakeServer) GetDescriptor(eserviceID, descriptorID uuid.UUID) *StoredDe
 	return descs[descriptorID]
 }
 
+// SeedCertifiedAttribute pre-populates a certified attribute in the store.
+func (s *FakeServer) SeedCertifiedAttribute(a StoredCertifiedAttribute) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.certifiedAttributes[a.ID] = &a
+}
+
+// SeedDeclaredAttribute pre-populates a declared attribute in the store.
+func (s *FakeServer) SeedDeclaredAttribute(a StoredDeclaredAttribute) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.declaredAttributes[a.ID] = &a
+}
+
+// SeedVerifiedAttribute pre-populates a verified attribute in the store.
+func (s *FakeServer) SeedVerifiedAttribute(a StoredVerifiedAttribute) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.verifiedAttributes[a.ID] = &a
+}
+
 func (s *FakeServer) setupRoutes() {
 	s.mux = http.NewServeMux()
 	s.mux.HandleFunc("POST /agreements", s.handleCreateAgreement)
@@ -168,4 +195,12 @@ func (s *FakeServer) setupRoutes() {
 	s.mux.HandleFunc("POST /eservices/{eserviceId}/descriptors/{descriptorId}/suspend", s.handleSuspendDescriptor)
 	s.mux.HandleFunc("POST /eservices/{eserviceId}/descriptors/{descriptorId}/unsuspend", s.handleUnsuspendDescriptor)
 	s.mux.HandleFunc("POST /eservices/{eserviceId}/descriptors/{descriptorId}/approve", s.handleApproveDelegatedDescriptor)
+
+	// Attribute routes.
+	s.mux.HandleFunc("GET /certifiedAttributes", s.handleListCertifiedAttributes)
+	s.mux.HandleFunc("GET /certifiedAttributes/{attributeId}", s.handleGetCertifiedAttribute)
+	s.mux.HandleFunc("GET /declaredAttributes", s.handleListDeclaredAttributes)
+	s.mux.HandleFunc("GET /declaredAttributes/{attributeId}", s.handleGetDeclaredAttribute)
+	s.mux.HandleFunc("GET /verifiedAttributes", s.handleListVerifiedAttributes)
+	s.mux.HandleFunc("GET /verifiedAttributes/{attributeId}", s.handleGetVerifiedAttribute)
 }

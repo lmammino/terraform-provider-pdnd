@@ -59,6 +59,32 @@ type StoredDescriptor struct {
 	ArchivedAt              *time.Time
 }
 
+// StoredCertifiedAttribute represents a certified attribute in the fake server's state.
+type StoredCertifiedAttribute struct {
+	ID          uuid.UUID
+	Name        string
+	Description string
+	Code        string
+	Origin      string
+	CreatedAt   time.Time
+}
+
+// StoredDeclaredAttribute represents a declared attribute in the fake server's state.
+type StoredDeclaredAttribute struct {
+	ID          uuid.UUID
+	Name        string
+	Description string
+	CreatedAt   time.Time
+}
+
+// StoredVerifiedAttribute represents a verified attribute in the fake server's state.
+type StoredVerifiedAttribute struct {
+	ID          uuid.UUID
+	Name        string
+	Description string
+	CreatedAt   time.Time
+}
+
 // StoredPurpose represents a purpose in the fake server's state.
 type StoredPurpose struct {
 	ID                  uuid.UUID

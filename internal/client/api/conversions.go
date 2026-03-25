@@ -243,6 +243,47 @@ func descriptorQuotasUpdateToGenerated(s DescriptorQuotasUpdate) generated.EServ
 	}
 }
 
+// certifiedAttributeFromGenerated converts a generated CertifiedAttribute to a domain CertifiedAttribute.
+func certifiedAttributeFromGenerated(g *generated.CertifiedAttribute) *CertifiedAttribute {
+	if g == nil {
+		return nil
+	}
+	return &CertifiedAttribute{
+		ID:          uuid.UUID(g.Id),
+		Name:        g.Name,
+		Description: g.Description,
+		Code:        g.Code,
+		Origin:      g.Origin,
+		CreatedAt:   g.CreatedAt,
+	}
+}
+
+// declaredAttributeFromGenerated converts a generated DeclaredAttribute to a domain DeclaredAttribute.
+func declaredAttributeFromGenerated(g *generated.DeclaredAttribute) *DeclaredAttribute {
+	if g == nil {
+		return nil
+	}
+	return &DeclaredAttribute{
+		ID:          uuid.UUID(g.Id),
+		Name:        g.Name,
+		Description: g.Description,
+		CreatedAt:   g.CreatedAt,
+	}
+}
+
+// verifiedAttributeFromGenerated converts a generated VerifiedAttribute to a domain VerifiedAttribute.
+func verifiedAttributeFromGenerated(g *generated.VerifiedAttribute) *VerifiedAttribute {
+	if g == nil {
+		return nil
+	}
+	return &VerifiedAttribute{
+		ID:          uuid.UUID(g.Id),
+		Name:        g.Name,
+		Description: g.Description,
+		CreatedAt:   g.CreatedAt,
+	}
+}
+
 // uuidsToOpenAPI converts a slice of uuid.UUID to a slice of openapi_types.UUID.
 func uuidsToOpenAPI(ids []uuid.UUID) []openapi_types.UUID {
 	if ids == nil {

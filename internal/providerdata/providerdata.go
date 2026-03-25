@@ -6,4 +6,5 @@ import "github.com/lmammino/terraform-provider-pdnd/internal/client/api"
 type ProviderData struct {
 	AgreementsAPI api.AgreementsAPI
 	EServicesAPI  api.EServicesAPI
+	AttributesAPI api.AttributesAPI
 }
