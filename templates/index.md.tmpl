@@ -1,0 +1,23 @@
+---
+page_title: "PDND Provider"
+description: |-
+  The PDND provider enables Terraform to manage resources on the PDND Interoperability platform.
+---
+
+# PDND Provider
+
+The PDND provider enables Terraform to manage resources on the [PDND Interoperability](https://developers.interop.pagopa.it/) platform (API v3).
+
+## Authentication
+
+The provider uses DPoP (Demonstration of Proof-of-Possession) authentication. You need:
+
+- An **access token** for the PDND API
+- A **PEM-encoded private key** for DPoP proof generation
+- A **key ID** identifying your DPoP key
+
+## Example Usage
+
+{{ tffile "examples/provider/provider.tf" }}
+
+{{ .SchemaMarkdown | trimspace }}

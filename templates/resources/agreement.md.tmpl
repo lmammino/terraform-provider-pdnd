@@ -1,0 +1,27 @@
+---
+page_title: "pdnd_agreement Resource - PDND"
+description: |-
+  Manages a PDND Agreement.
+---
+
+# pdnd_agreement (Resource)
+
+Manages a PDND Agreement lifecycle, including creation, submission, suspension, and upgrade.
+
+The `desired_state` attribute controls the intended lifecycle state. The provider will automatically
+perform the necessary API operations (submit, suspend, unsuspend) to reach the desired state.
+
+## Example Usage
+
+{{ tffile "examples/resources/pdnd_agreement/resource.tf" }}
+
+{{ .SchemaMarkdown | trimspace }}
+
+## Import
+
+Agreements can be imported using their UUID:
+
+{{ codefile "shell" "examples/resources/pdnd_agreement/import.sh" }}
+
+After import, `desired_state` is inferred from the current server state.
+Only agreements in DRAFT, ACTIVE, or SUSPENDED state can be imported.

@@ -1,0 +1,9 @@
+package: generated
+output: internal/client/generated/client.gen.go
+generate:
+  client: true
+  models: true
+  embedded-spec: false
+output-options:
+  skip-prune: true
+  client-type-name: APIClient
