@@ -195,6 +195,7 @@ func (p *pdndProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 	eservicesAPI := api.NewEServicesClient(genClient)
 	attributesAPI := api.NewAttributesClient(genClient)
 	descriptorAttributesAPI := api.NewDescriptorAttributesClient(genClient)
+	purposesAPI := api.NewPurposesClient(genClient)
 
 	// Store provider data
 	pd := &providerdata.ProviderData{
@@ -202,6 +203,7 @@ func (p *pdndProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 		EServicesAPI:            eservicesAPI,
 		AttributesAPI:           attributesAPI,
 		DescriptorAttributesAPI: descriptorAttributesAPI,
+		PurposesAPI:             purposesAPI,
 	}
 
 	resp.DataSourceData = pd
@@ -216,6 +218,7 @@ func (p *pdndProvider) Resources(_ context.Context) []func() resource.Resource {
 		resources.NewDescriptorCertifiedAttributesResource,
 		resources.NewDescriptorDeclaredAttributesResource,
 		resources.NewDescriptorVerifiedAttributesResource,
+		resources.NewPurposeResource,
 	}
 }
 

@@ -76,29 +76,77 @@ func delegationRefToGenerated(ref *DelegationRef) generated.DelegationRef {
 	}
 }
 
+// purposeVersionFromGenerated converts a generated PurposeVersion to a domain PurposeVersion.
+func purposeVersionFromGenerated(g *generated.PurposeVersion) *PurposeVersion {
+	if g == nil {
+		return nil
+	}
+	return &PurposeVersion{
+		ID:                uuid.UUID(g.Id),
+		State:             string(g.State),
+		DailyCalls:        g.DailyCalls,
+		CreatedAt:         g.CreatedAt,
+		UpdatedAt:         g.UpdatedAt,
+		FirstActivationAt: g.FirstActivationAt,
+		SuspendedAt:       g.SuspendedAt,
+		RejectionReason:   g.RejectionReason,
+	}
+}
+
 // purposeFromGenerated converts a generated Purpose to a domain Purpose.
 func purposeFromGenerated(g *generated.Purpose) Purpose {
 	p := Purpose{
-		ID:                  uuid.UUID(g.Id),
-		EServiceID:          uuid.UUID(g.EserviceId),
-		ConsumerID:          uuid.UUID(g.ConsumerId),
-		SuspendedByConsumer: g.SuspendedByConsumer,
-		SuspendedByProducer: g.SuspendedByProducer,
-		Title:               g.Title,
-		Description:         g.Description,
-		CreatedAt:           g.CreatedAt,
-		UpdatedAt:           g.UpdatedAt,
-		IsRiskAnalysisValid: g.IsRiskAnalysisValid,
-		IsFreeOfCharge:      g.IsFreeOfCharge,
-		FreeOfChargeReason:  g.FreeOfChargeReason,
+		ID:                        uuid.UUID(g.Id),
+		EServiceID:                uuid.UUID(g.EserviceId),
+		ConsumerID:                uuid.UUID(g.ConsumerId),
+		SuspendedByConsumer:       g.SuspendedByConsumer,
+		SuspendedByProducer:       g.SuspendedByProducer,
+		Title:                     g.Title,
+		Description:               g.Description,
+		CreatedAt:                 g.CreatedAt,
+		UpdatedAt:                 g.UpdatedAt,
+		IsRiskAnalysisValid:       g.IsRiskAnalysisValid,
+		IsFreeOfCharge:            g.IsFreeOfCharge,
+		FreeOfChargeReason:        g.FreeOfChargeReason,
+		CurrentVersion:            purposeVersionFromGenerated(g.CurrentVersion),
+		WaitingForApprovalVersion: purposeVersionFromGenerated(g.WaitingForApprovalVersion),
+		RejectedVersion:           purposeVersionFromGenerated(g.RejectedVersion),
 	}
 
 	if g.DelegationId != nil {
 		id := uuid.UUID(*g.DelegationId)
 		p.DelegationID = &id
 	}
+	if g.PurposeTemplateId != nil {
+		id := uuid.UUID(*g.PurposeTemplateId)
+		p.PurposeTemplateID = &id
+	}
 
 	return p
+}
+
+// purposeSeedToGenerated converts a domain PurposeSeed to a generated PurposeSeed.
+func purposeSeedToGenerated(s PurposeSeed) generated.PurposeSeed {
+	gs := generated.PurposeSeed{
+		EserviceId:         openapi_types.UUID(s.EServiceID),
+		Title:              s.Title,
+		Description:        s.Description,
+		DailyCalls:         s.DailyCalls,
+		IsFreeOfCharge:     s.IsFreeOfCharge,
+		FreeOfChargeReason: s.FreeOfChargeReason,
+	}
+	if s.DelegationID != nil {
+		id := openapi_types.UUID(*s.DelegationID)
+		gs.DelegationId = &id
+	}
+	return gs
+}
+
+// purposeVersionSeedToGenerated converts a domain PurposeVersionSeed to a generated PurposeVersionSeed.
+func purposeVersionSeedToGenerated(s PurposeVersionSeed) generated.PurposeVersionSeed {
+	return generated.PurposeVersionSeed{
+		DailyCalls: s.DailyCalls,
+	}
 }
 
 // paginationFromGenerated converts a generated Pagination to a domain Pagination.

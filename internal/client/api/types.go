@@ -267,19 +267,60 @@ type DescriptorAttributeEntry struct {
 	GroupIndex  int32
 }
 
-// Purpose represents a PDND purpose associated with an agreement.
+// PurposeVersion represents a version of a PDND purpose.
+type PurposeVersion struct {
+	ID                uuid.UUID
+	State             string // DRAFT, ACTIVE, SUSPENDED, ARCHIVED, WAITING_FOR_APPROVAL, REJECTED
+	DailyCalls        int32
+	CreatedAt         time.Time
+	UpdatedAt         *time.Time
+	FirstActivationAt *time.Time
+	SuspendedAt       *time.Time
+	RejectionReason   *string
+}
+
+// Purpose represents a PDND purpose.
 type Purpose struct {
-	ID                  uuid.UUID
-	EServiceID          uuid.UUID
-	ConsumerID          uuid.UUID
-	SuspendedByConsumer *bool
-	SuspendedByProducer *bool
-	Title               string
-	Description         string
-	CreatedAt           time.Time
-	UpdatedAt           *time.Time
-	IsRiskAnalysisValid bool
-	IsFreeOfCharge      bool
-	FreeOfChargeReason  *string
-	DelegationID        *uuid.UUID
+	ID                        uuid.UUID
+	EServiceID                uuid.UUID
+	ConsumerID                uuid.UUID
+	SuspendedByConsumer       *bool
+	SuspendedByProducer       *bool
+	Title                     string
+	Description               string
+	CreatedAt                 time.Time
+	UpdatedAt                 *time.Time
+	IsRiskAnalysisValid       bool
+	IsFreeOfCharge            bool
+	FreeOfChargeReason        *string
+	DelegationID              *uuid.UUID
+	CurrentVersion            *PurposeVersion
+	WaitingForApprovalVersion *PurposeVersion
+	RejectedVersion           *PurposeVersion
+	PurposeTemplateID         *uuid.UUID
+}
+
+// PurposeSeed contains fields for creating a new purpose.
+type PurposeSeed struct {
+	EServiceID         uuid.UUID
+	Title              string
+	Description        string
+	DailyCalls         int32
+	IsFreeOfCharge     bool
+	FreeOfChargeReason *string
+	DelegationID       *uuid.UUID
+}
+
+// PurposeDraftUpdate contains fields for updating a draft purpose.
+type PurposeDraftUpdate struct {
+	Title              *string
+	Description        *string
+	DailyCalls         *int32
+	IsFreeOfCharge     *bool
+	FreeOfChargeReason *string
+}
+
+// PurposeVersionSeed contains fields for creating a new purpose version.
+type PurposeVersionSeed struct {
+	DailyCalls int32
 }

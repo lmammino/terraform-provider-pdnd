@@ -80,6 +80,7 @@ resource "pdnd_agreement" "example" {
 | `pdnd_eservice_descriptor_certified_attributes` | Manages certified attribute groups on a descriptor |
 | `pdnd_eservice_descriptor_declared_attributes`  | Manages declared attribute groups on a descriptor  |
 | `pdnd_eservice_descriptor_verified_attributes`  | Manages verified attribute groups on a descriptor  |
+| `pdnd_purpose`                                  | Manages a PDND purpose lifecycle                   |
 
 ## Available Data Sources
 

@@ -24,6 +24,8 @@ type FakeServer struct {
 	descCertifiedAttrGroups map[uuid.UUID]map[uuid.UUID][]StoredDescriptorAttributeGroup
 	descDeclaredAttrGroups  map[uuid.UUID]map[uuid.UUID][]StoredDescriptorAttributeGroup
 	descVerifiedAttrGroups  map[uuid.UUID]map[uuid.UUID][]StoredDescriptorAttributeGroup
+	standalonePurposes      map[uuid.UUID]*StoredPurpose // keyed by purposeID
+	purposeApprovalThreshold int32                       // daily calls threshold for auto vs manual approval
 	approvalPolicy       string    // "AUTOMATIC" (default) or "MANUAL"
 	producerID           uuid.UUID // fixed per server instance
 	consumerID           uuid.UUID // fixed per server instance
@@ -43,8 +45,10 @@ func NewFakeServer() *FakeServer {
 		verifiedAttributes:      make(map[uuid.UUID]*StoredVerifiedAttribute),
 		descCertifiedAttrGroups: make(map[uuid.UUID]map[uuid.UUID][]StoredDescriptorAttributeGroup),
 		descDeclaredAttrGroups:  make(map[uuid.UUID]map[uuid.UUID][]StoredDescriptorAttributeGroup),
-		descVerifiedAttrGroups:  make(map[uuid.UUID]map[uuid.UUID][]StoredDescriptorAttributeGroup),
-		approvalPolicy:          "AUTOMATIC",
+		descVerifiedAttrGroups:   make(map[uuid.UUID]map[uuid.UUID][]StoredDescriptorAttributeGroup),
+		standalonePurposes:       make(map[uuid.UUID]*StoredPurpose),
+		purposeApprovalThreshold: 10000,
+		approvalPolicy:           "AUTOMATIC",
 		producerID:              uuid.New(),
 		consumerID:              uuid.New(),
 	}
@@ -165,6 +169,27 @@ func (s *FakeServer) SeedVerifiedAttribute(a StoredVerifiedAttribute) {
 	s.verifiedAttributes[a.ID] = &a
 }
 
+// SetPurposeApprovalThreshold sets the daily calls threshold above which activation requires approval.
+func (s *FakeServer) SetPurposeApprovalThreshold(threshold int32) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.purposeApprovalThreshold = threshold
+}
+
+// SeedStandalonePurpose pre-populates a standalone purpose in the store.
+func (s *FakeServer) SeedStandalonePurpose(p StoredPurpose) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.standalonePurposes[p.ID] = &p
+}
+
+// GetStandalonePurpose returns the current state of a standalone purpose (for test assertions).
+func (s *FakeServer) GetStandalonePurpose(id uuid.UUID) *StoredPurpose {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.standalonePurposes[id]
+}
+
 // SeedDescriptorAttributeGroups pre-populates attribute groups for a descriptor.
 func (s *FakeServer) SeedDescriptorAttributeGroups(eserviceID, descriptorID uuid.UUID, attrType string, groups []StoredDescriptorAttributeGroup) {
 	s.mu.Lock()
@@ -237,6 +262,18 @@ func (s *FakeServer) setupRoutes() {
 	s.mux.HandleFunc("POST /eservices/{eserviceId}/descriptors/{descriptorId}/suspend", s.handleSuspendDescriptor)
 	s.mux.HandleFunc("POST /eservices/{eserviceId}/descriptors/{descriptorId}/unsuspend", s.handleUnsuspendDescriptor)
 	s.mux.HandleFunc("POST /eservices/{eserviceId}/descriptors/{descriptorId}/approve", s.handleApproveDelegatedDescriptor)
+
+	// Purpose routes.
+	s.mux.HandleFunc("POST /purposes", s.handleCreatePurpose)
+	s.mux.HandleFunc("GET /purposes/{purposeId}", s.handleGetPurpose)
+	s.mux.HandleFunc("DELETE /purposes/{purposeId}", s.handleDeletePurpose)
+	s.mux.HandleFunc("PATCH /purposes/{purposeId}", s.handleUpdateDraftPurpose)
+	s.mux.HandleFunc("POST /purposes/{purposeId}/activate", s.handleActivatePurpose)
+	s.mux.HandleFunc("POST /purposes/{purposeId}/approve", s.handleApprovePurpose)
+	s.mux.HandleFunc("POST /purposes/{purposeId}/suspend", s.handleSuspendPurpose)
+	s.mux.HandleFunc("POST /purposes/{purposeId}/unsuspend", s.handleUnsuspendPurpose)
+	s.mux.HandleFunc("POST /purposes/{purposeId}/archive", s.handleArchivePurpose)
+	s.mux.HandleFunc("POST /purposes/{purposeId}/versions", s.handleCreatePurposeVersion)
 
 	// Descriptor attribute group routes.
 	for _, at := range []string{"certified", "declared", "verified"} {

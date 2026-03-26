@@ -1,0 +1,25 @@
+---
+page_title: "pdnd_purpose Resource - PDND"
+description: |-
+  Manages a PDND Purpose lifecycle.
+---
+
+# pdnd_purpose (Resource)
+
+Manages a PDND Purpose lifecycle, including creation, activation, suspension, and quota updates.
+
+The `desired_state` attribute controls the intended lifecycle state. The provider will automatically perform the necessary API operations (activate, suspend, unsuspend) to reach the desired state.
+
+When `daily_calls` exceeds the e-service threshold, activation may result in a `WAITING_FOR_APPROVAL` state. Set `allow_waiting_for_approval = true` to allow this.
+
+## Example Usage
+
+{{ tffile "examples/resources/pdnd_purpose/resource.tf" }}
+
+{{ .SchemaMarkdown | trimspace }}
+
+## Import
+
+Purposes can be imported using their UUID:
+
+{{ codefile "shell" "examples/resources/pdnd_purpose/import.sh" }}

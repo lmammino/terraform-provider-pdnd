@@ -164,7 +164,7 @@ func verifiedAttributeToJSON(a *StoredVerifiedAttribute) map[string]interface{} 
 	}
 }
 
-// purposeToJSON converts a StoredPurpose to a JSON-serializable map.
+// purposeToJSON converts a StoredPurpose to a JSON-serializable map (legacy, for agreement purposes).
 func purposeToJSON(p *StoredPurpose) map[string]interface{} {
 	m := map[string]interface{}{
 		"id":                  p.ID.String(),
@@ -186,6 +186,54 @@ func purposeToJSON(p *StoredPurpose) map[string]interface{} {
 	}
 	if p.UpdatedAt != nil {
 		m["updatedAt"] = p.UpdatedAt.UTC().Format("2006-01-02T15:04:05Z")
+	}
+	return m
+}
+
+// fullPurposeToJSON converts a StoredPurpose to a JSON-serializable map with version fields.
+func fullPurposeToJSON(p *StoredPurpose) map[string]interface{} {
+	m := purposeToJSON(p)
+
+	// Derive version fields from the versions list
+	for i := len(p.Versions) - 1; i >= 0; i-- {
+		v := &p.Versions[i]
+		switch v.State {
+		case "ACTIVE", "SUSPENDED", "ARCHIVED":
+			m["currentVersion"] = purposeVersionToJSON(v)
+		case "WAITING_FOR_APPROVAL":
+			m["waitingForApprovalVersion"] = purposeVersionToJSON(v)
+		case "REJECTED":
+			m["rejectedVersion"] = purposeVersionToJSON(v)
+		case "DRAFT":
+			// Draft version is exposed as currentVersion if no active/suspended version exists
+			if _, hasCV := m["currentVersion"]; !hasCV {
+				m["currentVersion"] = purposeVersionToJSON(v)
+			}
+		}
+	}
+
+	return m
+}
+
+// purposeVersionToJSON converts a StoredPurposeVersion to a JSON-serializable map.
+func purposeVersionToJSON(v *StoredPurposeVersion) map[string]interface{} {
+	m := map[string]interface{}{
+		"id":         v.ID.String(),
+		"state":      v.State,
+		"dailyCalls": v.DailyCalls,
+		"createdAt":  v.CreatedAt.UTC().Format("2006-01-02T15:04:05Z"),
+	}
+	if v.UpdatedAt != nil {
+		m["updatedAt"] = v.UpdatedAt.UTC().Format("2006-01-02T15:04:05Z")
+	}
+	if v.FirstActivationAt != nil {
+		m["firstActivationAt"] = v.FirstActivationAt.UTC().Format("2006-01-02T15:04:05Z")
+	}
+	if v.SuspendedAt != nil {
+		m["suspendedAt"] = v.SuspendedAt.UTC().Format("2006-01-02T15:04:05Z")
+	}
+	if v.RejectionReason != nil {
+		m["rejectionReason"] = *v.RejectionReason
 	}
 	return m
 }

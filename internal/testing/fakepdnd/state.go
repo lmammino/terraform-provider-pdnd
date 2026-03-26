@@ -90,6 +90,18 @@ type StoredDescriptorAttributeGroup struct {
 	Attributes []uuid.UUID
 }
 
+// StoredPurposeVersion represents a version of a purpose.
+type StoredPurposeVersion struct {
+	ID                uuid.UUID
+	State             string
+	DailyCalls        int32
+	CreatedAt         time.Time
+	UpdatedAt         *time.Time
+	FirstActivationAt *time.Time
+	SuspendedAt       *time.Time
+	RejectionReason   *string
+}
+
 // StoredPurpose represents a purpose in the fake server's state.
 type StoredPurpose struct {
 	ID                  uuid.UUID
@@ -105,4 +117,5 @@ type StoredPurpose struct {
 	IsFreeOfCharge      bool
 	FreeOfChargeReason  string
 	DelegationID        *uuid.UUID
+	Versions            []StoredPurposeVersion
 }
