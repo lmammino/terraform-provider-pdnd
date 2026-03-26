@@ -1,0 +1,1 @@
+terraform import pdnd_eservice_descriptor_document.api_spec 550e8400-e29b-41d4-a716-446655440000/770e8400-e29b-41d4-a716-446655440002/dd0e8400-e29b-41d4-a716-446655440020

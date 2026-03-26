@@ -81,6 +81,8 @@ resource "pdnd_agreement" "example" {
 | `pdnd_eservice_descriptor_declared_attributes`  | Manages declared attribute groups on a descriptor  |
 | `pdnd_eservice_descriptor_verified_attributes`  | Manages verified attribute groups on a descriptor  |
 | `pdnd_purpose`                                  | Manages a PDND purpose lifecycle                   |
+| `pdnd_eservice_descriptor_document`  | Manages a document on a descriptor        |
+| `pdnd_eservice_descriptor_interface` | Manages the interface file on a descriptor |
 
 ## Available Data Sources
 

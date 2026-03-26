@@ -24,6 +24,10 @@ type FakeServer struct {
 	descCertifiedAttrGroups map[uuid.UUID]map[uuid.UUID][]StoredDescriptorAttributeGroup
 	descDeclaredAttrGroups  map[uuid.UUID]map[uuid.UUID][]StoredDescriptorAttributeGroup
 	descVerifiedAttrGroups  map[uuid.UUID]map[uuid.UUID][]StoredDescriptorAttributeGroup
+	// descriptor documents: eserviceID -> descriptorID -> []StoredDocument
+	descDocuments  map[uuid.UUID]map[uuid.UUID][]StoredDocument
+	// descriptor interface: eserviceID -> descriptorID -> *StoredDocument (nil = no interface)
+	descInterfaces map[uuid.UUID]map[uuid.UUID]*StoredDocument
 	standalonePurposes      map[uuid.UUID]*StoredPurpose // keyed by purposeID
 	purposeApprovalThreshold int32                       // daily calls threshold for auto vs manual approval
 	approvalPolicy       string    // "AUTOMATIC" (default) or "MANUAL"
@@ -46,6 +50,8 @@ func NewFakeServer() *FakeServer {
 		descCertifiedAttrGroups: make(map[uuid.UUID]map[uuid.UUID][]StoredDescriptorAttributeGroup),
 		descDeclaredAttrGroups:  make(map[uuid.UUID]map[uuid.UUID][]StoredDescriptorAttributeGroup),
 		descVerifiedAttrGroups:   make(map[uuid.UUID]map[uuid.UUID][]StoredDescriptorAttributeGroup),
+		descDocuments:            make(map[uuid.UUID]map[uuid.UUID][]StoredDocument),
+		descInterfaces:           make(map[uuid.UUID]map[uuid.UUID]*StoredDocument),
 		standalonePurposes:       make(map[uuid.UUID]*StoredPurpose),
 		purposeApprovalThreshold: 10000,
 		approvalPolicy:           "AUTOMATIC",
@@ -190,6 +196,46 @@ func (s *FakeServer) GetStandalonePurpose(id uuid.UUID) *StoredPurpose {
 	return s.standalonePurposes[id]
 }
 
+// SeedDocument pre-populates a document for a descriptor.
+func (s *FakeServer) SeedDocument(eserviceID, descriptorID uuid.UUID, doc StoredDocument) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.descDocuments[eserviceID] == nil {
+		s.descDocuments[eserviceID] = make(map[uuid.UUID][]StoredDocument)
+	}
+	s.descDocuments[eserviceID][descriptorID] = append(s.descDocuments[eserviceID][descriptorID], doc)
+}
+
+// GetDocuments returns stored documents for test assertions.
+func (s *FakeServer) GetDocuments(eserviceID, descriptorID uuid.UUID) []StoredDocument {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.descDocuments[eserviceID] == nil {
+		return nil
+	}
+	return s.descDocuments[eserviceID][descriptorID]
+}
+
+// SeedInterface pre-populates the interface for a descriptor.
+func (s *FakeServer) SeedInterface(eserviceID, descriptorID uuid.UUID, doc StoredDocument) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.descInterfaces[eserviceID] == nil {
+		s.descInterfaces[eserviceID] = make(map[uuid.UUID]*StoredDocument)
+	}
+	s.descInterfaces[eserviceID][descriptorID] = &doc
+}
+
+// GetInterface returns the stored interface for test assertions.
+func (s *FakeServer) GetInterface(eserviceID, descriptorID uuid.UUID) *StoredDocument {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.descInterfaces[eserviceID] == nil {
+		return nil
+	}
+	return s.descInterfaces[eserviceID][descriptorID]
+}
+
 // SeedDescriptorAttributeGroups pre-populates attribute groups for a descriptor.
 func (s *FakeServer) SeedDescriptorAttributeGroups(eserviceID, descriptorID uuid.UUID, attrType string, groups []StoredDescriptorAttributeGroup) {
 	s.mu.Lock()
@@ -274,6 +320,17 @@ func (s *FakeServer) setupRoutes() {
 	s.mux.HandleFunc("POST /purposes/{purposeId}/unsuspend", s.handleUnsuspendPurpose)
 	s.mux.HandleFunc("POST /purposes/{purposeId}/archive", s.handleArchivePurpose)
 	s.mux.HandleFunc("POST /purposes/{purposeId}/versions", s.handleCreatePurposeVersion)
+
+	// Descriptor document routes.
+	s.mux.HandleFunc("GET /eservices/{eserviceId}/descriptors/{descriptorId}/documents", s.handleListDocuments)
+	s.mux.HandleFunc("POST /eservices/{eserviceId}/descriptors/{descriptorId}/documents", s.handleUploadDocument)
+	s.mux.HandleFunc("GET /eservices/{eserviceId}/descriptors/{descriptorId}/documents/{documentId}", s.handleDownloadDocument)
+	s.mux.HandleFunc("DELETE /eservices/{eserviceId}/descriptors/{descriptorId}/documents/{documentId}", s.handleDeleteDocument)
+
+	// Descriptor interface routes.
+	s.mux.HandleFunc("POST /eservices/{eserviceId}/descriptors/{descriptorId}/interface", s.handleUploadInterface)
+	s.mux.HandleFunc("GET /eservices/{eserviceId}/descriptors/{descriptorId}/interface", s.handleDownloadInterface)
+	s.mux.HandleFunc("DELETE /eservices/{eserviceId}/descriptors/{descriptorId}/interface", s.handleDeleteInterface)
 
 	// Descriptor attribute group routes.
 	for _, at := range []string{"certified", "declared", "verified"} {

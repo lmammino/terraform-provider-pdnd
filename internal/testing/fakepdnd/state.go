@@ -90,6 +90,16 @@ type StoredDescriptorAttributeGroup struct {
 	Attributes []uuid.UUID
 }
 
+// StoredDocument represents a document or interface file in the fake server's state.
+type StoredDocument struct {
+	ID          uuid.UUID
+	Name        string // filename
+	PrettyName  string
+	ContentType string
+	Content     []byte // actual file bytes
+	CreatedAt   time.Time
+}
+
 // StoredPurposeVersion represents a version of a purpose.
 type StoredPurposeVersion struct {
 	ID                uuid.UUID

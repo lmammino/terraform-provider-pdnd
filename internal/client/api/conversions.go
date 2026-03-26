@@ -332,6 +332,20 @@ func verifiedAttributeFromGenerated(g *generated.VerifiedAttribute) *VerifiedAtt
 	}
 }
 
+// documentFromGenerated converts a generated Document to a domain DescriptorDocument.
+func documentFromGenerated(g *generated.Document) *DescriptorDocument {
+	if g == nil {
+		return nil
+	}
+	return &DescriptorDocument{
+		ID:          uuid.UUID(g.Id),
+		Name:        g.Name,
+		PrettyName:  g.PrettyName,
+		ContentType: g.ContentType,
+		CreatedAt:   g.CreatedAt,
+	}
+}
+
 // uuidsToOpenAPI converts a slice of uuid.UUID to a slice of openapi_types.UUID.
 func uuidsToOpenAPI(ids []uuid.UUID) []openapi_types.UUID {
 	if ids == nil {

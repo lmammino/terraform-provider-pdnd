@@ -8,5 +8,6 @@ type ProviderData struct {
 	EServicesAPI            api.EServicesAPI
 	AttributesAPI           api.AttributesAPI
 	DescriptorAttributesAPI api.DescriptorAttributesAPI
+	DescriptorDocumentsAPI  api.DescriptorDocumentsAPI
 	PurposesAPI             api.PurposesAPI
 }

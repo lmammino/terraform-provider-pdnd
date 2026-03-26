@@ -1,0 +1,23 @@
+---
+page_title: "pdnd_eservice_descriptor_interface Resource - PDND"
+description: |-
+  Manages the interface file on a PDND E-Service Descriptor.
+---
+
+# pdnd_eservice_descriptor_interface (Resource)
+
+Manages the interface file (e.g., OpenAPI specification) on a PDND E-Service Descriptor. Each descriptor can have at most one interface.
+
+All user-configurable attributes trigger replacement when changed — interfaces cannot be updated in place.
+
+## Example Usage
+
+{{ tffile "examples/resources/pdnd_eservice_descriptor_interface/resource.tf" }}
+
+{{ .SchemaMarkdown | trimspace }}
+
+## Import
+
+Descriptor interfaces can be imported using the composite ID `eservice_id/descriptor_id`:
+
+{{ codefile "shell" "examples/resources/pdnd_eservice_descriptor_interface/import.sh" }}

@@ -1,0 +1,23 @@
+---
+page_title: "pdnd_eservice_descriptor_document Resource - PDND"
+description: |-
+  Manages a document on a PDND E-Service Descriptor.
+---
+
+# pdnd_eservice_descriptor_document (Resource)
+
+Manages a single document attached to a PDND E-Service Descriptor. To add multiple documents, create multiple resource instances.
+
+All user-configurable attributes trigger replacement when changed — documents cannot be updated in place.
+
+## Example Usage
+
+{{ tffile "examples/resources/pdnd_eservice_descriptor_document/resource.tf" }}
+
+{{ .SchemaMarkdown | trimspace }}
+
+## Import
+
+Descriptor documents can be imported using the composite ID `eservice_id/descriptor_id/document_id`:
+
+{{ codefile "shell" "examples/resources/pdnd_eservice_descriptor_document/import.sh" }}

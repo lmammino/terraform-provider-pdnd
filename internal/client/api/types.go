@@ -267,6 +267,15 @@ type DescriptorAttributeEntry struct {
 	GroupIndex  int32
 }
 
+// DescriptorDocument represents a file (document or interface) on a descriptor.
+type DescriptorDocument struct {
+	ID          uuid.UUID
+	Name        string
+	PrettyName  string
+	ContentType string
+	CreatedAt   time.Time
+}
+
 // PurposeVersion represents a version of a PDND purpose.
 type PurposeVersion struct {
 	ID                uuid.UUID
