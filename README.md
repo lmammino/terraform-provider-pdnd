@@ -83,6 +83,8 @@ resource "pdnd_agreement" "example" {
 | `pdnd_purpose`                                  | Manages a PDND purpose lifecycle                   |
 | `pdnd_eservice_descriptor_document`  | Manages a document on a descriptor        |
 | `pdnd_eservice_descriptor_interface` | Manages the interface file on a descriptor |
+| `pdnd_consumer_delegation`   | Manages a PDND consumer delegation            |
+| `pdnd_producer_delegation`   | Manages a PDND producer delegation            |
 
 ## Available Data Sources
 
@@ -103,6 +105,10 @@ resource "pdnd_agreement" "example" {
 | `pdnd_declared_attributes`   | Lists declared attributes with name filter        |
 | `pdnd_verified_attribute`    | Fetches a single verified attribute by ID         |
 | `pdnd_verified_attributes`   | Lists verified attributes with name filter        |
+| `pdnd_consumer_delegation`   | Fetches a single consumer delegation by ID    |
+| `pdnd_consumer_delegations`  | Lists consumer delegations with filters       |
+| `pdnd_producer_delegation`   | Fetches a single producer delegation by ID    |
+| `pdnd_producer_delegations`  | Lists producer delegations with filters       |
 
 ## Development
 

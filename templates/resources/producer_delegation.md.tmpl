@@ -1,0 +1,21 @@
+---
+page_title: "pdnd_producer_delegation Resource - PDND"
+description: |-
+  Manages a PDND producer delegation.
+---
+
+# pdnd_producer_delegation (Resource)
+
+Creates a PDND producer delegation. The delegation starts in WAITING_FOR_APPROVAL state and must be accepted by the delegate.
+
+Note: Delegations cannot be deleted via the API. Destroying this resource removes it from Terraform state only.
+
+## Example Usage
+
+{{ tffile "examples/resources/pdnd_producer_delegation/resource.tf" }}
+
+{{ .SchemaMarkdown | trimspace }}
+
+## Import
+
+{{ codefile "shell" "examples/resources/pdnd_producer_delegation/import.sh" }}

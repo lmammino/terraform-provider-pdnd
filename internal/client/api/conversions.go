@@ -76,6 +76,63 @@ func delegationRefToGenerated(ref *DelegationRef) generated.DelegationRef {
 	}
 }
 
+// consumerDelegationFromGenerated converts a generated ConsumerDelegation to a domain Delegation.
+func consumerDelegationFromGenerated(g *generated.ConsumerDelegation) *Delegation {
+	if g == nil {
+		return nil
+	}
+	return &Delegation{
+		ID:              uuid.UUID(g.Id),
+		DelegatorID:     uuid.UUID(g.DelegatorId),
+		DelegateID:      uuid.UUID(g.DelegateId),
+		EServiceID:      uuid.UUID(g.EserviceId),
+		State:           string(g.State),
+		CreatedAt:       g.CreatedAt,
+		SubmittedAt:     g.SubmittedAt,
+		UpdatedAt:       g.UpdatedAt,
+		ActivatedAt:     g.ActivatedAt,
+		RejectedAt:      g.RejectedAt,
+		RevokedAt:       g.RevokedAt,
+		RejectionReason: g.RejectionReason,
+	}
+}
+
+// producerDelegationFromGenerated converts a generated ProducerDelegation to a domain Delegation.
+func producerDelegationFromGenerated(g *generated.ProducerDelegation) *Delegation {
+	if g == nil {
+		return nil
+	}
+	return &Delegation{
+		ID:              uuid.UUID(g.Id),
+		DelegatorID:     uuid.UUID(g.DelegatorId),
+		DelegateID:      uuid.UUID(g.DelegateId),
+		EServiceID:      uuid.UUID(g.EserviceId),
+		State:           string(g.State),
+		CreatedAt:       g.CreatedAt,
+		SubmittedAt:     g.SubmittedAt,
+		UpdatedAt:       g.UpdatedAt,
+		ActivatedAt:     g.ActivatedAt,
+		RejectedAt:      g.RejectedAt,
+		RevokedAt:       g.RevokedAt,
+		RejectionReason: g.RejectionReason,
+	}
+}
+
+// delegationSeedToGenerated converts a domain DelegationSeed to a generated DelegationSeed.
+func delegationSeedToGenerated(s DelegationSeed) generated.DelegationSeed {
+	return generated.DelegationSeed{
+		EserviceId: openapi_types.UUID(s.EServiceID),
+		DelegateId: openapi_types.UUID(s.DelegateID),
+	}
+}
+
+// delegationRejectionToGenerated converts a domain DelegationRejection to a generated DelegationRejection.
+func delegationRejectionToGenerated(r DelegationRejection) generated.DelegationRejection {
+	return generated.DelegationRejection{
+		RejectionReason: r.RejectionReason,
+	}
+}
+
 // purposeVersionFromGenerated converts a generated PurposeVersion to a domain PurposeVersion.
 func purposeVersionFromGenerated(g *generated.PurposeVersion) *PurposeVersion {
 	if g == nil {

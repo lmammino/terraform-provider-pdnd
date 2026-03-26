@@ -90,6 +90,22 @@ type StoredDescriptorAttributeGroup struct {
 	Attributes []uuid.UUID
 }
 
+// StoredDelegation represents a consumer or producer delegation in the fake server's state.
+type StoredDelegation struct {
+	ID              uuid.UUID
+	DelegatorID     uuid.UUID
+	DelegateID      uuid.UUID
+	EServiceID      uuid.UUID
+	State           string // WAITING_FOR_APPROVAL, ACTIVE, REJECTED, REVOKED
+	CreatedAt       time.Time
+	SubmittedAt     time.Time
+	UpdatedAt       *time.Time
+	ActivatedAt     *time.Time
+	RejectedAt      *time.Time
+	RevokedAt       *time.Time
+	RejectionReason *string
+}
+
 // StoredDocument represents a document or interface file in the fake server's state.
 type StoredDocument struct {
 	ID          uuid.UUID

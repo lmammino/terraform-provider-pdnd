@@ -181,6 +181,49 @@ type DelegationRef struct {
 	DelegationID uuid.UUID // required
 }
 
+// Delegation represents a consumer or producer delegation.
+type Delegation struct {
+	ID              uuid.UUID
+	DelegatorID     uuid.UUID
+	DelegateID      uuid.UUID
+	EServiceID      uuid.UUID
+	State           string // WAITING_FOR_APPROVAL, ACTIVE, REJECTED, REVOKED
+	CreatedAt       time.Time
+	SubmittedAt     time.Time
+	UpdatedAt       *time.Time
+	ActivatedAt     *time.Time
+	RejectedAt      *time.Time
+	RevokedAt       *time.Time
+	RejectionReason *string
+}
+
+// DelegationSeed contains fields for creating a new delegation.
+type DelegationSeed struct {
+	EServiceID uuid.UUID
+	DelegateID uuid.UUID
+}
+
+// DelegationRejection contains fields for rejecting a delegation.
+type DelegationRejection struct {
+	RejectionReason string
+}
+
+// DelegationsPage is a paginated list of delegations.
+type DelegationsPage struct {
+	Results    []Delegation
+	Pagination Pagination
+}
+
+// ListDelegationsParams contains filter parameters for listing delegations.
+type ListDelegationsParams struct {
+	States       []string
+	DelegatorIDs []uuid.UUID
+	DelegateIDs  []uuid.UUID
+	EServiceIDs  []uuid.UUID
+	Offset       int32
+	Limit        int32
+}
+
 // ListAgreementsParams contains filter parameters for listing agreements.
 type ListAgreementsParams struct {
 	States        []string    // AgreementState values to filter by

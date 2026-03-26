@@ -10,4 +10,5 @@ type ProviderData struct {
 	DescriptorAttributesAPI api.DescriptorAttributesAPI
 	DescriptorDocumentsAPI  api.DescriptorDocumentsAPI
 	PurposesAPI             api.PurposesAPI
+	DelegationsAPI          api.DelegationsAPI
 }

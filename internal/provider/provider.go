@@ -197,6 +197,7 @@ func (p *pdndProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 	descriptorAttributesAPI := api.NewDescriptorAttributesClient(genClient)
 	descriptorDocumentsAPI := api.NewDescriptorDocumentsClient(genClient)
 	purposesAPI := api.NewPurposesClient(genClient)
+	delegationsAPI := api.NewDelegationsClient(genClient)
 
 	// Store provider data
 	pd := &providerdata.ProviderData{
@@ -206,6 +207,7 @@ func (p *pdndProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 		DescriptorAttributesAPI: descriptorAttributesAPI,
 		DescriptorDocumentsAPI:  descriptorDocumentsAPI,
 		PurposesAPI:             purposesAPI,
+		DelegationsAPI:          delegationsAPI,
 	}
 
 	resp.DataSourceData = pd
@@ -223,6 +225,8 @@ func (p *pdndProvider) Resources(_ context.Context) []func() resource.Resource {
 		resources.NewDescriptorDocumentResource,
 		resources.NewDescriptorInterfaceResource,
 		resources.NewPurposeResource,
+		resources.NewConsumerDelegationResource,
+		resources.NewProducerDelegationResource,
 	}
 }
 
@@ -243,5 +247,9 @@ func (p *pdndProvider) DataSources(_ context.Context) []func() datasource.DataSo
 		datasources.NewVerifiedAttributesDataSource,
 		datasources.NewPurposeDataSource,
 		datasources.NewPurposesDataSource,
+		datasources.NewConsumerDelegationDataSource,
+		datasources.NewConsumerDelegationsDataSource,
+		datasources.NewProducerDelegationDataSource,
+		datasources.NewProducerDelegationsDataSource,
 	}
 }

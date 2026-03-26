@@ -28,6 +28,8 @@ type FakeServer struct {
 	descDocuments  map[uuid.UUID]map[uuid.UUID][]StoredDocument
 	// descriptor interface: eserviceID -> descriptorID -> *StoredDocument (nil = no interface)
 	descInterfaces map[uuid.UUID]map[uuid.UUID]*StoredDocument
+	consumerDelegations     map[uuid.UUID]*StoredDelegation
+	producerDelegations     map[uuid.UUID]*StoredDelegation
 	standalonePurposes      map[uuid.UUID]*StoredPurpose // keyed by purposeID
 	purposeApprovalThreshold int32                       // daily calls threshold for auto vs manual approval
 	approvalPolicy       string    // "AUTOMATIC" (default) or "MANUAL"
@@ -50,6 +52,8 @@ func NewFakeServer() *FakeServer {
 		descCertifiedAttrGroups: make(map[uuid.UUID]map[uuid.UUID][]StoredDescriptorAttributeGroup),
 		descDeclaredAttrGroups:  make(map[uuid.UUID]map[uuid.UUID][]StoredDescriptorAttributeGroup),
 		descVerifiedAttrGroups:   make(map[uuid.UUID]map[uuid.UUID][]StoredDescriptorAttributeGroup),
+		consumerDelegations:      make(map[uuid.UUID]*StoredDelegation),
+		producerDelegations:      make(map[uuid.UUID]*StoredDelegation),
 		descDocuments:            make(map[uuid.UUID]map[uuid.UUID][]StoredDocument),
 		descInterfaces:           make(map[uuid.UUID]map[uuid.UUID]*StoredDocument),
 		standalonePurposes:       make(map[uuid.UUID]*StoredPurpose),
@@ -258,6 +262,31 @@ func (s *FakeServer) GetDescriptorAttributeGroups(eserviceID, descriptorID uuid.
 	return store[eserviceID][descriptorID]
 }
 
+// SeedDelegation pre-populates a delegation.
+func (s *FakeServer) SeedDelegation(delegationType string, d StoredDelegation) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.getDelegationStore(delegationType)[d.ID] = &d
+}
+
+// GetDelegation returns a stored delegation for test assertions.
+func (s *FakeServer) GetDelegation(delegationType string, id uuid.UUID) *StoredDelegation {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.getDelegationStore(delegationType)[id]
+}
+
+func (s *FakeServer) getDelegationStore(delegationType string) map[uuid.UUID]*StoredDelegation {
+	switch delegationType {
+	case "consumer":
+		return s.consumerDelegations
+	case "producer":
+		return s.producerDelegations
+	default:
+		return nil
+	}
+}
+
 func (s *FakeServer) getAttrGroupStore(attrType string) map[uuid.UUID]map[uuid.UUID][]StoredDescriptorAttributeGroup {
 	switch attrType {
 	case "certified":
@@ -321,6 +350,17 @@ func (s *FakeServer) setupRoutes() {
 	s.mux.HandleFunc("POST /purposes/{purposeId}/unsuspend", s.handleUnsuspendPurpose)
 	s.mux.HandleFunc("POST /purposes/{purposeId}/archive", s.handleArchivePurpose)
 	s.mux.HandleFunc("POST /purposes/{purposeId}/versions", s.handleCreatePurposeVersion)
+
+	// Delegation routes.
+	for _, dt := range []string{"consumer", "producer"} {
+		delegationType := dt // capture for closure
+		prefix := "/" + delegationType + "Delegations"
+		s.mux.HandleFunc("POST "+prefix, s.makeHandleCreateDelegation(delegationType))
+		s.mux.HandleFunc("GET "+prefix, s.makeHandleListDelegations(delegationType))
+		s.mux.HandleFunc("GET "+prefix+"/{delegationId}", s.makeHandleGetDelegation(delegationType))
+		s.mux.HandleFunc("POST "+prefix+"/{delegationId}/accept", s.makeHandleAcceptDelegation(delegationType))
+		s.mux.HandleFunc("POST "+prefix+"/{delegationId}/reject", s.makeHandleRejectDelegation(delegationType))
+	}
 
 	// Descriptor document routes.
 	s.mux.HandleFunc("GET /eservices/{eserviceId}/descriptors/{descriptorId}/documents", s.handleListDocuments)
