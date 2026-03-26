@@ -1,0 +1,19 @@
+---
+page_title: "pdnd_client_purpose Resource - PDND"
+description: |-
+  Manages a purpose association on a PDND client.
+---
+
+# pdnd_client_purpose (Resource)
+
+Links a purpose to a PDND client. The association is immutable — any change triggers replacement.
+
+## Example Usage
+
+{{ tffile "examples/resources/pdnd_client_purpose/resource.tf" }}
+
+{{ .SchemaMarkdown | trimspace }}
+
+## Import
+
+{{ codefile "shell" "examples/resources/pdnd_client_purpose/import.sh" }}

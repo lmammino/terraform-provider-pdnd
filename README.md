@@ -85,6 +85,8 @@ resource "pdnd_agreement" "example" {
 | `pdnd_eservice_descriptor_interface` | Manages the interface file on a descriptor |
 | `pdnd_consumer_delegation`   | Manages a PDND consumer delegation            |
 | `pdnd_producer_delegation`   | Manages a PDND producer delegation            |
+| `pdnd_client_key`            | Manages a public key on a PDND client         |
+| `pdnd_client_purpose`        | Links a purpose to a PDND client              |
 
 ## Available Data Sources
 
@@ -109,6 +111,9 @@ resource "pdnd_agreement" "example" {
 | `pdnd_consumer_delegations`  | Lists consumer delegations with filters       |
 | `pdnd_producer_delegation`   | Fetches a single producer delegation by ID    |
 | `pdnd_producer_delegations`  | Lists producer delegations with filters       |
+| `pdnd_client`                | Fetches a single client by ID                 |
+| `pdnd_clients`               | Lists clients with optional filters           |
+| `pdnd_client_keys`           | Lists keys on a client                        |
 
 ## Development
 

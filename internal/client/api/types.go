@@ -386,3 +386,54 @@ type ListPurposesParams struct {
 type PurposeVersionSeed struct {
 	DailyCalls int32
 }
+
+// ClientInfo represents a PDND client (full visibility).
+type ClientInfo struct {
+	ID          uuid.UUID
+	ConsumerID  uuid.UUID
+	Name        string
+	Description *string
+	CreatedAt   time.Time
+}
+
+// ClientKey represents a JWK public key on a client.
+type ClientKey struct {
+	Kid string
+	Kty string
+	Alg *string
+	Use *string
+}
+
+// ClientKeyDetail represents a key with its associated client ID (from create response).
+type ClientKeyDetail struct {
+	ClientID uuid.UUID
+	Key      ClientKey
+}
+
+// ClientKeySeed contains fields for creating a new client key.
+type ClientKeySeed struct {
+	Key  string // Base64 PEM public key
+	Use  string // SIG or ENC
+	Alg  string
+	Name string // 5-60 chars
+}
+
+// ClientsPage is a paginated list of clients.
+type ClientsPage struct {
+	Results    []ClientInfo
+	Pagination Pagination
+}
+
+// ClientKeysPage is a paginated list of client keys.
+type ClientKeysPage struct {
+	Results    []ClientKey
+	Pagination Pagination
+}
+
+// ListClientsParams contains filter parameters for listing clients.
+type ListClientsParams struct {
+	Name       *string
+	ConsumerID *uuid.UUID
+	Offset     int32
+	Limit      int32
+}

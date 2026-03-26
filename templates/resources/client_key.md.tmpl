@@ -1,0 +1,19 @@
+---
+page_title: "pdnd_client_key Resource - PDND"
+description: |-
+  Manages a public key on a PDND client.
+---
+
+# pdnd_client_key (Resource)
+
+Creates a public key (JWK) on a PDND client for API authentication. Keys are immutable — any change triggers replacement.
+
+## Example Usage
+
+{{ tffile "examples/resources/pdnd_client_key/resource.tf" }}
+
+{{ .SchemaMarkdown | trimspace }}
+
+## Import
+
+{{ codefile "shell" "examples/resources/pdnd_client_key/import.sh" }}

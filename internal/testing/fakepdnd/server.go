@@ -28,6 +28,9 @@ type FakeServer struct {
 	descDocuments  map[uuid.UUID]map[uuid.UUID][]StoredDocument
 	// descriptor interface: eserviceID -> descriptorID -> *StoredDocument (nil = no interface)
 	descInterfaces map[uuid.UUID]map[uuid.UUID]*StoredDocument
+	clients                 map[uuid.UUID]*StoredClient
+	clientKeys              map[uuid.UUID][]StoredClientKey       // clientID -> keys
+	clientPurposes          map[uuid.UUID]map[uuid.UUID]bool      // clientID -> purposeID -> exists
 	consumerDelegations     map[uuid.UUID]*StoredDelegation
 	producerDelegations     map[uuid.UUID]*StoredDelegation
 	standalonePurposes      map[uuid.UUID]*StoredPurpose // keyed by purposeID
@@ -52,6 +55,9 @@ func NewFakeServer() *FakeServer {
 		descCertifiedAttrGroups: make(map[uuid.UUID]map[uuid.UUID][]StoredDescriptorAttributeGroup),
 		descDeclaredAttrGroups:  make(map[uuid.UUID]map[uuid.UUID][]StoredDescriptorAttributeGroup),
 		descVerifiedAttrGroups:   make(map[uuid.UUID]map[uuid.UUID][]StoredDescriptorAttributeGroup),
+		clients:                  make(map[uuid.UUID]*StoredClient),
+		clientKeys:               make(map[uuid.UUID][]StoredClientKey),
+		clientPurposes:           make(map[uuid.UUID]map[uuid.UUID]bool),
 		consumerDelegations:      make(map[uuid.UUID]*StoredDelegation),
 		producerDelegations:      make(map[uuid.UUID]*StoredDelegation),
 		descDocuments:            make(map[uuid.UUID]map[uuid.UUID][]StoredDocument),
@@ -276,6 +282,45 @@ func (s *FakeServer) GetDelegation(delegationType string, id uuid.UUID) *StoredD
 	return s.getDelegationStore(delegationType)[id]
 }
 
+// SeedClient pre-populates a client in the store.
+func (s *FakeServer) SeedClient(c StoredClient) {
+	s.mu.Lock(); defer s.mu.Unlock()
+	s.clients[c.ID] = &c
+}
+
+// GetClient returns the current state of a client (for test assertions).
+func (s *FakeServer) GetClient(id uuid.UUID) *StoredClient {
+	s.mu.RLock(); defer s.mu.RUnlock()
+	return s.clients[id]
+}
+
+// SeedClientKey pre-populates a key for a client.
+func (s *FakeServer) SeedClientKey(clientID uuid.UUID, key StoredClientKey) {
+	s.mu.Lock(); defer s.mu.Unlock()
+	s.clientKeys[clientID] = append(s.clientKeys[clientID], key)
+}
+
+// GetClientKeys returns the keys for a client (for test assertions).
+func (s *FakeServer) GetClientKeys(clientID uuid.UUID) []StoredClientKey {
+	s.mu.RLock(); defer s.mu.RUnlock()
+	return s.clientKeys[clientID]
+}
+
+// SeedClientPurpose pre-populates a purpose association for a client.
+func (s *FakeServer) SeedClientPurpose(clientID, purposeID uuid.UUID) {
+	s.mu.Lock(); defer s.mu.Unlock()
+	if s.clientPurposes[clientID] == nil {
+		s.clientPurposes[clientID] = make(map[uuid.UUID]bool)
+	}
+	s.clientPurposes[clientID][purposeID] = true
+}
+
+// GetClientPurposes returns the purpose associations for a client (for test assertions).
+func (s *FakeServer) GetClientPurposes(clientID uuid.UUID) map[uuid.UUID]bool {
+	s.mu.RLock(); defer s.mu.RUnlock()
+	return s.clientPurposes[clientID]
+}
+
 func (s *FakeServer) getDelegationStore(delegationType string) map[uuid.UUID]*StoredDelegation {
 	switch delegationType {
 	case "consumer":
@@ -350,6 +395,15 @@ func (s *FakeServer) setupRoutes() {
 	s.mux.HandleFunc("POST /purposes/{purposeId}/unsuspend", s.handleUnsuspendPurpose)
 	s.mux.HandleFunc("POST /purposes/{purposeId}/archive", s.handleArchivePurpose)
 	s.mux.HandleFunc("POST /purposes/{purposeId}/versions", s.handleCreatePurposeVersion)
+
+	// Client routes.
+	s.mux.HandleFunc("GET /clients", s.handleListClients)
+	s.mux.HandleFunc("GET /clients/{clientId}", s.handleGetClient)
+	s.mux.HandleFunc("GET /clients/{clientId}/keys", s.handleListClientKeys)
+	s.mux.HandleFunc("POST /clients/{clientId}/keys", s.handleCreateClientKey)
+	s.mux.HandleFunc("DELETE /clients/{clientId}/keys/{keyId}", s.handleDeleteClientKey)
+	s.mux.HandleFunc("POST /clients/{clientId}/purposes", s.handleAddClientPurpose)
+	s.mux.HandleFunc("DELETE /clients/{clientId}/purposes/{purposeId}", s.handleRemoveClientPurpose)
 
 	// Delegation routes.
 	for _, dt := range []string{"consumer", "producer"} {

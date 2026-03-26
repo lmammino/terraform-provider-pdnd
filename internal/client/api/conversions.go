@@ -1,6 +1,8 @@
 package api
 
 import (
+	"fmt"
+
 	"github.com/google/uuid"
 	generated "github.com/lmammino/terraform-provider-pdnd/internal/client/generated"
 	openapi_types "github.com/oapi-codegen/runtime/types"
@@ -400,6 +402,46 @@ func documentFromGenerated(g *generated.Document) *DescriptorDocument {
 		PrettyName:  g.PrettyName,
 		ContentType: g.ContentType,
 		CreatedAt:   g.CreatedAt,
+	}
+}
+
+// clientInfoFromGenerated converts a generated Client union to a domain ClientInfo.
+func clientInfoFromGenerated(g *generated.Client) (*ClientInfo, error) {
+	// Try FullClient first
+	full, err := g.AsFullClient()
+	if err == nil {
+		return &ClientInfo{
+			ID: uuid.UUID(full.Id), ConsumerID: uuid.UUID(full.ConsumerId),
+			Name: full.Name, Description: full.Description, CreatedAt: full.CreatedAt,
+		}, nil
+	}
+	// Fall back to PartialClient
+	partial, err := g.AsPartialClient()
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse client: %w", err)
+	}
+	return &ClientInfo{
+		ID: uuid.UUID(partial.Id), ConsumerID: uuid.UUID(partial.ConsumerId),
+	}, nil
+}
+
+// clientKeyFromJWK converts a generated JWK to a domain ClientKey.
+func clientKeyFromJWK(g *generated.JWK) ClientKey {
+	return ClientKey{Kid: string(g.Kid), Kty: g.Kty, Alg: g.Alg, Use: g.Use}
+}
+
+// clientKeyDetailFromGenerated converts a generated Key to a domain ClientKeyDetail.
+func clientKeyDetailFromGenerated(g *generated.Key) *ClientKeyDetail {
+	return &ClientKeyDetail{
+		ClientID: uuid.UUID(g.ClientId),
+		Key:      clientKeyFromJWK(&g.Jwk),
+	}
+}
+
+// clientKeySeedToGenerated converts a domain ClientKeySeed to a generated KeySeed.
+func clientKeySeedToGenerated(s ClientKeySeed) generated.KeySeed {
+	return generated.KeySeed{
+		Key: s.Key, Use: generated.KeyUse(s.Use), Alg: s.Alg, Name: s.Name,
 	}
 }
 

@@ -106,6 +106,25 @@ type StoredDelegation struct {
 	RejectionReason *string
 }
 
+// StoredClient represents a client in the fake server's state.
+type StoredClient struct {
+	ID          uuid.UUID
+	ConsumerID  uuid.UUID
+	Name        string
+	Description string
+	CreatedAt   time.Time
+}
+
+// StoredClientKey represents a JWK key on a client.
+type StoredClientKey struct {
+	Kid  string
+	Kty  string
+	Alg  string
+	Use  string
+	Name string
+	Key  string // raw PEM key (stored for reference)
+}
+
 // StoredDocument represents a document or interface file in the fake server's state.
 type StoredDocument struct {
 	ID          uuid.UUID
