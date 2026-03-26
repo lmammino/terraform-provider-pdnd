@@ -241,5 +241,7 @@ func (p *pdndProvider) DataSources(_ context.Context) []func() datasource.DataSo
 		datasources.NewDeclaredAttributesDataSource,
 		datasources.NewVerifiedAttributeDataSource,
 		datasources.NewVerifiedAttributesDataSource,
+		datasources.NewPurposeDataSource,
+		datasources.NewPurposesDataSource,
 	}
 }

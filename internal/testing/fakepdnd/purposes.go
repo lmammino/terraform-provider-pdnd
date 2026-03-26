@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -439,6 +440,87 @@ func (s *FakeServer) handleCreatePurposeVersion(w http.ResponseWriter, r *http.R
 	p.UpdatedAt = &now
 
 	writeJSON(w, http.StatusCreated, purposeVersionToJSON(&version))
+}
+
+func (s *FakeServer) handleListPurposes(w http.ResponseWriter, r *http.Request) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	q := r.URL.Query()
+	offset := parseIntDefault(q.Get("offset"), 0)
+	limit := parseIntDefault(q.Get("limit"), 50)
+
+	eserviceIDs := q["eserviceIds"]
+	consumerIDs := q["consumerIds"]
+	states := q["states"]
+	title := q.Get("title")
+
+	// Build set helpers for filtering.
+	eserviceSet := make(map[string]bool, len(eserviceIDs))
+	for _, id := range eserviceIDs {
+		eserviceSet[id] = true
+	}
+	consumerSet := make(map[string]bool, len(consumerIDs))
+	for _, id := range consumerIDs {
+		consumerSet[id] = true
+	}
+	stateSet := make(map[string]bool, len(states))
+	for _, st := range states {
+		stateSet[st] = true
+	}
+
+	var filtered []*StoredPurpose
+	for _, p := range s.standalonePurposes {
+		if len(eserviceSet) > 0 && !eserviceSet[p.EServiceID.String()] {
+			continue
+		}
+		if len(consumerSet) > 0 && !consumerSet[p.ConsumerID.String()] {
+			continue
+		}
+		if title != "" {
+			lowerTitle := strings.ToLower(p.Title)
+			if !strings.Contains(lowerTitle, strings.ToLower(title)) {
+				continue
+			}
+		}
+		if len(stateSet) > 0 {
+			state := deriveStoredPurposeState(p)
+			if !stateSet[state] {
+				continue
+			}
+		}
+		filtered = append(filtered, p)
+	}
+
+	totalCount := len(filtered)
+
+	// Convert to JSON.
+	var results []map[string]interface{}
+	for _, p := range filtered {
+		results = append(results, fullPurposeToJSON(p))
+	}
+
+	// Apply pagination.
+	if offset > len(results) {
+		offset = len(results)
+	}
+	results = results[offset:]
+	if limit < len(results) {
+		results = results[:limit]
+	}
+
+	if results == nil {
+		results = []map[string]interface{}{}
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"results": results,
+		"pagination": map[string]interface{}{
+			"offset":     offset,
+			"limit":      limit,
+			"totalCount": totalCount,
+		},
+	})
 }
 
 // deriveStoredPurposeState derives the effective state from stored purpose versions.

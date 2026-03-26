@@ -24,6 +24,7 @@ type PurposesAPI interface {
 	UnsuspendPurpose(ctx context.Context, id uuid.UUID, delegationRef *DelegationRef) (*Purpose, error)
 	ArchivePurpose(ctx context.Context, id uuid.UUID) (*Purpose, error)
 	CreatePurposeVersion(ctx context.Context, id uuid.UUID, seed PurposeVersionSeed) (*PurposeVersion, error)
+	ListPurposes(ctx context.Context, params ListPurposesParams) (*PurposesPage, error)
 }
 
 type purposesClient struct {
@@ -183,6 +184,51 @@ func (p *purposesClient) ArchivePurpose(ctx context.Context, id uuid.UUID) (*Pur
 	}
 	result := purposeFromGenerated(resp.JSON200)
 	return &result, nil
+}
+
+func (p *purposesClient) ListPurposes(ctx context.Context, params ListPurposesParams) (*PurposesPage, error) {
+	genParams := &generated.GetPurposesParams{
+		Offset: params.Offset,
+		Limit:  params.Limit,
+	}
+	if len(params.EServiceIDs) > 0 {
+		ids := uuidsToOpenAPI(params.EServiceIDs)
+		genParams.EserviceIds = &ids
+	}
+	if params.Title != nil {
+		genParams.Title = params.Title
+	}
+	if len(params.ConsumerIDs) > 0 {
+		ids := uuidsToOpenAPI(params.ConsumerIDs)
+		genParams.ConsumerIds = &ids
+	}
+	if len(params.States) > 0 {
+		states := make([]generated.PurposeVersionState, len(params.States))
+		for i, s := range params.States {
+			states[i] = generated.PurposeVersionState(s)
+		}
+		genParams.States = &states
+	}
+
+	resp, err := p.client.GetPurposesWithResponse(ctx, genParams)
+	if err != nil {
+		return nil, fmt.Errorf("list purposes: %w", err)
+	}
+	if err := client.CheckResponse(resp.HTTPResponse); err != nil {
+		return nil, err
+	}
+	if resp.JSON200 == nil {
+		return nil, fmt.Errorf("list purposes: empty response body")
+	}
+
+	page := &PurposesPage{
+		Pagination: paginationFromGenerated(resp.JSON200.Pagination),
+		Results:    make([]Purpose, len(resp.JSON200.Results)),
+	}
+	for i := range resp.JSON200.Results {
+		page.Results[i] = purposeFromGenerated(&resp.JSON200.Results[i])
+	}
+	return page, nil
 }
 
 func (p *purposesClient) CreatePurposeVersion(ctx context.Context, id uuid.UUID, seed PurposeVersionSeed) (*PurposeVersion, error) {

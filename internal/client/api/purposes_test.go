@@ -242,6 +242,74 @@ func TestSuspendPurpose_Contract(t *testing.T) {
 	}
 }
 
+func TestListPurposes_Contract(t *testing.T) {
+	var gotMethod, gotPath, gotQuery string
+
+	cannedListPurposesJSON := `{
+  "results": [{
+    "id": "990e8400-e29b-41d4-a716-446655440000",
+    "eserviceId": "550e8400-e29b-41d4-a716-446655440000",
+    "consumerId": "880e8400-e29b-41d4-a716-446655440003",
+    "title": "Test Purpose",
+    "description": "A test purpose",
+    "createdAt": "2024-01-01T00:00:00Z",
+    "isRiskAnalysisValid": true,
+    "isFreeOfCharge": false,
+    "currentVersion": {
+      "id": "aa0e8400-e29b-41d4-a716-446655440010",
+      "state": "ACTIVE",
+      "dailyCalls": 1000,
+      "createdAt": "2024-01-01T00:00:00Z"
+    }
+  }],
+  "pagination": {"offset": 0, "limit": 50, "totalCount": 1}
+}`
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotMethod = r.Method
+		gotPath = r.URL.Path
+		gotQuery = r.URL.RawQuery
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(cannedListPurposesJSON))
+	}))
+	defer server.Close()
+
+	api := NewPurposesClient(newTestClient(t, server))
+	result, err := api.ListPurposes(context.Background(), ListPurposesParams{
+		Offset: 0,
+		Limit:  50,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if gotMethod != http.MethodGet {
+		t.Errorf("expected method GET, got %s", gotMethod)
+	}
+	if gotPath != "/purposes" {
+		t.Errorf("expected path /purposes, got %s", gotPath)
+	}
+	// Verify query params include offset and limit
+	if gotQuery == "" {
+		t.Error("expected query params to be set")
+	}
+	if len(result.Results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(result.Results))
+	}
+	if result.Results[0].Title != "Test Purpose" {
+		t.Errorf("expected title 'Test Purpose', got %s", result.Results[0].Title)
+	}
+	if result.Results[0].CurrentVersion == nil {
+		t.Error("expected currentVersion to be set")
+	} else if result.Results[0].CurrentVersion.State != "ACTIVE" {
+		t.Errorf("expected currentVersion.State ACTIVE, got %s", result.Results[0].CurrentVersion.State)
+	}
+	if result.Pagination.TotalCount != 1 {
+		t.Errorf("expected totalCount 1, got %d", result.Pagination.TotalCount)
+	}
+}
+
 func TestCreatePurposeVersion_Contract(t *testing.T) {
 	var gotMethod, gotPath string
 	var gotBody map[string]interface{}

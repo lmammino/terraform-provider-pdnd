@@ -311,6 +311,7 @@ func (s *FakeServer) setupRoutes() {
 
 	// Purpose routes.
 	s.mux.HandleFunc("POST /purposes", s.handleCreatePurpose)
+	s.mux.HandleFunc("GET /purposes", s.handleListPurposes)
 	s.mux.HandleFunc("GET /purposes/{purposeId}", s.handleGetPurpose)
 	s.mux.HandleFunc("DELETE /purposes/{purposeId}", s.handleDeletePurpose)
 	s.mux.HandleFunc("PATCH /purposes/{purposeId}", s.handleUpdateDraftPurpose)

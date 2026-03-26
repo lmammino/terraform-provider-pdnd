@@ -91,6 +91,8 @@ resource "pdnd_agreement" "example" {
 | `pdnd_agreement`             | Fetches a single agreement by ID                 |
 | `pdnd_agreements`            | Lists agreements with optional filters           |
 | `pdnd_agreement_purposes`    | Lists purposes associated with an agreement      |
+| `pdnd_purpose`               | Fetches a single purpose by ID                   |
+| `pdnd_purposes`              | Lists purposes with optional filters             |
 | `pdnd_eservice`              | Fetches a single e-service by ID                 |
 | `pdnd_eservices`             | Lists e-services with optional filters           |
 | `pdnd_eservice_descriptor`   | Fetches a single descriptor by ID                |

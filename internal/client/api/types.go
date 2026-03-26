@@ -329,6 +329,16 @@ type PurposeDraftUpdate struct {
 	FreeOfChargeReason *string
 }
 
+// ListPurposesParams contains filter parameters for listing purposes.
+type ListPurposesParams struct {
+	EServiceIDs []uuid.UUID
+	Title       *string
+	ConsumerIDs []uuid.UUID
+	States      []string
+	Offset      int32
+	Limit       int32
+}
+
 // PurposeVersionSeed contains fields for creating a new purpose version.
 type PurposeVersionSeed struct {
 	DailyCalls int32
