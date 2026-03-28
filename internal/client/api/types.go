@@ -437,3 +437,74 @@ type ListClientsParams struct {
 	Offset     int32
 	Limit      int32
 }
+
+// TenantInfo represents a PDND tenant.
+type TenantInfo struct {
+	ID          uuid.UUID
+	Name        string
+	Kind        *string
+	ExternalID  *TenantExternalID
+	CreatedAt   time.Time
+	UpdatedAt   *time.Time
+	OnboardedAt *time.Time
+	SubUnitType *string
+}
+
+// TenantExternalID represents a tenant's external identity.
+type TenantExternalID struct {
+	Origin string
+	Value  string
+}
+
+// TenantsPage is a paginated list of tenants.
+type TenantsPage struct {
+	Results    []TenantInfo
+	Pagination Pagination
+}
+
+// ListTenantsParams contains filter parameters for listing tenants.
+type ListTenantsParams struct {
+	IPACode *string
+	TaxCode *string
+	Offset  int32
+	Limit   int32
+}
+
+// TenantCertifiedAttr represents a certified attribute assigned to a tenant.
+type TenantCertifiedAttr struct {
+	ID         uuid.UUID
+	AssignedAt time.Time
+	RevokedAt  *time.Time
+}
+
+// TenantDeclaredAttr represents a declared attribute assigned to a tenant.
+type TenantDeclaredAttr struct {
+	ID           uuid.UUID
+	AssignedAt   time.Time
+	RevokedAt    *time.Time
+	DelegationID *uuid.UUID
+}
+
+// TenantVerifiedAttr represents a verified attribute assigned to a tenant.
+type TenantVerifiedAttr struct {
+	ID         uuid.UUID
+	AssignedAt time.Time
+}
+
+// TenantCertifiedAttrsPage is a paginated list.
+type TenantCertifiedAttrsPage struct {
+	Results    []TenantCertifiedAttr
+	Pagination Pagination
+}
+
+// TenantDeclaredAttrsPage is a paginated list.
+type TenantDeclaredAttrsPage struct {
+	Results    []TenantDeclaredAttr
+	Pagination Pagination
+}
+
+// TenantVerifiedAttrsPage is a paginated list.
+type TenantVerifiedAttrsPage struct {
+	Results    []TenantVerifiedAttr
+	Pagination Pagination
+}

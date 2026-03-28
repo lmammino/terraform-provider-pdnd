@@ -125,6 +125,39 @@ type StoredClientKey struct {
 	Key  string // raw PEM key (stored for reference)
 }
 
+// StoredTenant represents a tenant in the fake server's state.
+type StoredTenant struct {
+	ID             uuid.UUID
+	Name           string
+	Kind           string // PA, PRIVATE, GSP, SCP
+	ExternalOrigin string
+	ExternalValue  string
+	CreatedAt      time.Time
+	UpdatedAt      *time.Time
+	OnboardedAt    *time.Time
+}
+
+// StoredTenantCertifiedAttr represents a certified attribute assignment on a tenant.
+type StoredTenantCertifiedAttr struct {
+	ID         uuid.UUID
+	AssignedAt time.Time
+	RevokedAt  *time.Time
+}
+
+// StoredTenantDeclaredAttr represents a declared attribute assignment on a tenant.
+type StoredTenantDeclaredAttr struct {
+	ID           uuid.UUID
+	AssignedAt   time.Time
+	RevokedAt    *time.Time
+	DelegationID *uuid.UUID
+}
+
+// StoredTenantVerifiedAttr represents a verified attribute assignment on a tenant.
+type StoredTenantVerifiedAttr struct {
+	ID         uuid.UUID
+	AssignedAt time.Time
+}
+
 // StoredDocument represents a document or interface file in the fake server's state.
 type StoredDocument struct {
 	ID          uuid.UUID

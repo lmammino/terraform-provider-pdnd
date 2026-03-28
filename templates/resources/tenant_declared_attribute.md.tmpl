@@ -1,0 +1,19 @@
+---
+page_title: "pdnd_tenant_declared_attribute Resource - PDND"
+description: |-
+  Assigns a declared attribute to a PDND tenant.
+---
+
+# pdnd_tenant_declared_attribute (Resource)
+
+Assigns a declared attribute to a PDND tenant. The assignment is immutable — any change triggers replacement.
+
+## Example Usage
+
+{{ tffile "examples/resources/pdnd_tenant_declared_attribute/resource.tf" }}
+
+{{ .SchemaMarkdown | trimspace }}
+
+## Import
+
+{{ codefile "shell" "examples/resources/pdnd_tenant_declared_attribute/import.sh" }}

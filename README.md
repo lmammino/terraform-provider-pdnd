@@ -87,6 +87,9 @@ resource "pdnd_agreement" "example" {
 | `pdnd_producer_delegation`   | Manages a PDND producer delegation            |
 | `pdnd_client_key`            | Manages a public key on a PDND client         |
 | `pdnd_client_purpose`        | Links a purpose to a PDND client              |
+| `pdnd_tenant_certified_attribute` | Assigns a certified attribute to a tenant    |
+| `pdnd_tenant_declared_attribute`  | Assigns a declared attribute to a tenant     |
+| `pdnd_tenant_verified_attribute`  | Assigns a verified attribute to a tenant     |
 
 ## Available Data Sources
 
@@ -114,6 +117,8 @@ resource "pdnd_agreement" "example" {
 | `pdnd_client`                | Fetches a single client by ID                 |
 | `pdnd_clients`               | Lists clients with optional filters           |
 | `pdnd_client_keys`           | Lists keys on a client                        |
+| `pdnd_tenant`                | Fetches a single tenant by ID                |
+| `pdnd_tenants`               | Lists tenants with optional filters          |
 
 ## Development
 

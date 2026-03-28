@@ -28,6 +28,10 @@ type FakeServer struct {
 	descDocuments  map[uuid.UUID]map[uuid.UUID][]StoredDocument
 	// descriptor interface: eserviceID -> descriptorID -> *StoredDocument (nil = no interface)
 	descInterfaces map[uuid.UUID]map[uuid.UUID]*StoredDocument
+	tenants                  map[uuid.UUID]*StoredTenant
+	tenantCertifiedAttrs     map[uuid.UUID][]StoredTenantCertifiedAttr  // tenantID -> attrs
+	tenantDeclaredAttrs      map[uuid.UUID][]StoredTenantDeclaredAttr
+	tenantVerifiedAttrs      map[uuid.UUID][]StoredTenantVerifiedAttr
 	clients                 map[uuid.UUID]*StoredClient
 	clientKeys              map[uuid.UUID][]StoredClientKey       // clientID -> keys
 	clientPurposes          map[uuid.UUID]map[uuid.UUID]bool      // clientID -> purposeID -> exists
@@ -55,6 +59,10 @@ func NewFakeServer() *FakeServer {
 		descCertifiedAttrGroups: make(map[uuid.UUID]map[uuid.UUID][]StoredDescriptorAttributeGroup),
 		descDeclaredAttrGroups:  make(map[uuid.UUID]map[uuid.UUID][]StoredDescriptorAttributeGroup),
 		descVerifiedAttrGroups:   make(map[uuid.UUID]map[uuid.UUID][]StoredDescriptorAttributeGroup),
+		tenants:                  make(map[uuid.UUID]*StoredTenant),
+		tenantCertifiedAttrs:     make(map[uuid.UUID][]StoredTenantCertifiedAttr),
+		tenantDeclaredAttrs:      make(map[uuid.UUID][]StoredTenantDeclaredAttr),
+		tenantVerifiedAttrs:      make(map[uuid.UUID][]StoredTenantVerifiedAttr),
 		clients:                  make(map[uuid.UUID]*StoredClient),
 		clientKeys:               make(map[uuid.UUID][]StoredClientKey),
 		clientPurposes:           make(map[uuid.UUID]map[uuid.UUID]bool),
@@ -321,6 +329,62 @@ func (s *FakeServer) GetClientPurposes(clientID uuid.UUID) map[uuid.UUID]bool {
 	return s.clientPurposes[clientID]
 }
 
+// SeedTenant pre-populates a tenant in the store.
+func (s *FakeServer) SeedTenant(t StoredTenant) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.tenants[t.ID] = &t
+}
+
+// GetTenant returns the current state of a tenant (for test assertions).
+func (s *FakeServer) GetTenant(id uuid.UUID) *StoredTenant {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.tenants[id]
+}
+
+// SeedTenantCertifiedAttr pre-populates a certified attribute on a tenant.
+func (s *FakeServer) SeedTenantCertifiedAttr(tenantID uuid.UUID, attr StoredTenantCertifiedAttr) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.tenantCertifiedAttrs[tenantID] = append(s.tenantCertifiedAttrs[tenantID], attr)
+}
+
+// GetTenantCertifiedAttrs returns the certified attributes for a tenant (for test assertions).
+func (s *FakeServer) GetTenantCertifiedAttrs(tenantID uuid.UUID) []StoredTenantCertifiedAttr {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.tenantCertifiedAttrs[tenantID]
+}
+
+// SeedTenantDeclaredAttr pre-populates a declared attribute on a tenant.
+func (s *FakeServer) SeedTenantDeclaredAttr(tenantID uuid.UUID, attr StoredTenantDeclaredAttr) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.tenantDeclaredAttrs[tenantID] = append(s.tenantDeclaredAttrs[tenantID], attr)
+}
+
+// GetTenantDeclaredAttrs returns the declared attributes for a tenant (for test assertions).
+func (s *FakeServer) GetTenantDeclaredAttrs(tenantID uuid.UUID) []StoredTenantDeclaredAttr {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.tenantDeclaredAttrs[tenantID]
+}
+
+// SeedTenantVerifiedAttr pre-populates a verified attribute on a tenant.
+func (s *FakeServer) SeedTenantVerifiedAttr(tenantID uuid.UUID, attr StoredTenantVerifiedAttr) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.tenantVerifiedAttrs[tenantID] = append(s.tenantVerifiedAttrs[tenantID], attr)
+}
+
+// GetTenantVerifiedAttrs returns the verified attributes for a tenant (for test assertions).
+func (s *FakeServer) GetTenantVerifiedAttrs(tenantID uuid.UUID) []StoredTenantVerifiedAttr {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.tenantVerifiedAttrs[tenantID]
+}
+
 func (s *FakeServer) getDelegationStore(delegationType string) map[uuid.UUID]*StoredDelegation {
 	switch delegationType {
 	case "consumer":
@@ -395,6 +459,19 @@ func (s *FakeServer) setupRoutes() {
 	s.mux.HandleFunc("POST /purposes/{purposeId}/unsuspend", s.handleUnsuspendPurpose)
 	s.mux.HandleFunc("POST /purposes/{purposeId}/archive", s.handleArchivePurpose)
 	s.mux.HandleFunc("POST /purposes/{purposeId}/versions", s.handleCreatePurposeVersion)
+
+	// Tenant routes.
+	s.mux.HandleFunc("GET /tenants", s.handleListTenants)
+	s.mux.HandleFunc("GET /tenants/{tenantId}", s.handleGetTenant)
+	s.mux.HandleFunc("GET /tenants/{tenantId}/certifiedAttributes", s.handleListTenantCertifiedAttrs)
+	s.mux.HandleFunc("POST /tenants/{tenantId}/certifiedAttributes", s.handleAssignTenantCertifiedAttr)
+	s.mux.HandleFunc("DELETE /tenants/{tenantId}/certifiedAttributes/{attributeId}", s.handleRevokeTenantCertifiedAttr)
+	s.mux.HandleFunc("GET /tenants/{tenantId}/declaredAttributes", s.handleListTenantDeclaredAttrs)
+	s.mux.HandleFunc("POST /tenants/{tenantId}/declaredAttributes", s.handleAssignTenantDeclaredAttr)
+	s.mux.HandleFunc("DELETE /tenants/{tenantId}/declaredAttributes/{attributeId}", s.handleRevokeTenantDeclaredAttr)
+	s.mux.HandleFunc("GET /tenants/{tenantId}/verifiedAttributes", s.handleListTenantVerifiedAttrs)
+	s.mux.HandleFunc("POST /tenants/{tenantId}/verifiedAttributes", s.handleAssignTenantVerifiedAttr)
+	s.mux.HandleFunc("DELETE /tenants/{tenantId}/verifiedAttributes/{attributeId}", s.handleRevokeTenantVerifiedAttr)
 
 	// Client routes.
 	s.mux.HandleFunc("GET /clients", s.handleListClients)

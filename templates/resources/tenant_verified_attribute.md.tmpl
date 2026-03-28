@@ -1,0 +1,19 @@
+---
+page_title: "pdnd_tenant_verified_attribute Resource - PDND"
+description: |-
+  Assigns a verified attribute to a PDND tenant.
+---
+
+# pdnd_tenant_verified_attribute (Resource)
+
+Assigns a verified attribute to a PDND tenant. The assignment is immutable — any change triggers replacement.
+
+## Example Usage
+
+{{ tffile "examples/resources/pdnd_tenant_verified_attribute/resource.tf" }}
+
+{{ .SchemaMarkdown | trimspace }}
+
+## Import
+
+{{ codefile "shell" "examples/resources/pdnd_tenant_verified_attribute/import.sh" }}

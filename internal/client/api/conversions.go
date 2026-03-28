@@ -445,6 +445,76 @@ func clientKeySeedToGenerated(s ClientKeySeed) generated.KeySeed {
 	}
 }
 
+// tenantInfoFromGenerated converts a generated Tenant to a domain TenantInfo.
+func tenantInfoFromGenerated(g *generated.Tenant) *TenantInfo {
+	if g == nil {
+		return nil
+	}
+
+	t := &TenantInfo{
+		ID:          uuid.UUID(g.Id),
+		Name:        g.Name,
+		CreatedAt:   g.CreatedAt,
+		UpdatedAt:   g.UpdatedAt,
+		OnboardedAt: g.OnboardedAt,
+		ExternalID: &TenantExternalID{
+			Origin: g.ExternalId.Origin,
+			Value:  g.ExternalId.Value,
+		},
+	}
+
+	if g.Kind != nil {
+		k := string(*g.Kind)
+		t.Kind = &k
+	}
+	if g.SubUnitType != nil {
+		s := string(*g.SubUnitType)
+		t.SubUnitType = &s
+	}
+
+	return t
+}
+
+// tenantCertifiedAttrFromGenerated converts a generated TenantCertifiedAttribute to a domain TenantCertifiedAttr.
+func tenantCertifiedAttrFromGenerated(g *generated.TenantCertifiedAttribute) *TenantCertifiedAttr {
+	if g == nil {
+		return nil
+	}
+	return &TenantCertifiedAttr{
+		ID:         uuid.UUID(g.Id),
+		AssignedAt: g.AssignedAt,
+		RevokedAt:  g.RevokedAt,
+	}
+}
+
+// tenantDeclaredAttrFromGenerated converts a generated TenantDeclaredAttribute to a domain TenantDeclaredAttr.
+func tenantDeclaredAttrFromGenerated(g *generated.TenantDeclaredAttribute) *TenantDeclaredAttr {
+	if g == nil {
+		return nil
+	}
+	a := &TenantDeclaredAttr{
+		ID:         uuid.UUID(g.Id),
+		AssignedAt: g.AssignedAt,
+		RevokedAt:  g.RevokedAt,
+	}
+	if g.DelegationId != nil {
+		id := uuid.UUID(*g.DelegationId)
+		a.DelegationID = &id
+	}
+	return a
+}
+
+// tenantVerifiedAttrFromGenerated converts a generated TenantVerifiedAttribute to a domain TenantVerifiedAttr.
+func tenantVerifiedAttrFromGenerated(g *generated.TenantVerifiedAttribute) *TenantVerifiedAttr {
+	if g == nil {
+		return nil
+	}
+	return &TenantVerifiedAttr{
+		ID:         uuid.UUID(g.Id),
+		AssignedAt: g.AssignedAt,
+	}
+}
+
 // uuidsToOpenAPI converts a slice of uuid.UUID to a slice of openapi_types.UUID.
 func uuidsToOpenAPI(ids []uuid.UUID) []openapi_types.UUID {
 	if ids == nil {

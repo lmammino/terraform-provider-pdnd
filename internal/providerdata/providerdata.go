@@ -12,4 +12,5 @@ type ProviderData struct {
 	PurposesAPI             api.PurposesAPI
 	DelegationsAPI          api.DelegationsAPI
 	ClientsAPI              api.ClientsAPI
+	TenantsAPI              api.TenantsAPI
 }
